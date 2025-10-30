@@ -17,8 +17,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     if ($orderId > 0 && in_array($newStatus, $allowedStatuses, true)) {
         $stmt = $pdo->prepare('UPDATE `order` SET order_status = ?, updated_at = NOW() WHERE order_id = ?');
         $stmt->execute([$newStatus, $orderId]);
-        // PRG pattern to avoid resubmission
-        redirect('order.php');
+        // PRG pattern to avoid resubmission with success indicator
+        redirect('order.php?updated=1');
     }
 }
 
@@ -68,6 +68,22 @@ $orders = $stmt->fetchAll();
             background-color: var(--background-dark);
             color: var(--text-light);
         }
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(40, 167, 69, 0.2);
+            border: 1px solid #28a745;
+            color: #28a745;
+            padding: 0.85rem 1rem;
+            border-radius: 10px;
+            box-shadow: var(--shadow-strong);
+            z-index: 2000;
+            backdrop-filter: blur(6px);
+            animation: slidein .25s ease-out;
+        }
+        @keyframes slidein { from { transform: translateY(-10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         .admin-header {
             background: var(--card-bg);
             padding: 1rem 2rem;
@@ -160,6 +176,25 @@ $orders = $stmt->fetchAll();
         .status-ready { background: var(--success-color); color: #fff; }
         .status-delivered { background: var(--success-color); color: #fff; }
         .status-cancelled { background: var(--danger-color); color: #fff; }
+        /* Pretty status select */
+        .status-select {
+            appearance: none;
+            -webkit-appearance: none;
+            background: #1f1f1f url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 20 20" fill="%23a0a0a0"><path d="M5.516 7.548l4.484 4.487 4.484-4.487 1.516 1.516-6 6-6-6z"/></svg>') no-repeat right .55rem center/16px;
+            color: #fff;
+            border: 1px solid #555;
+            border-radius: 8px;
+            padding: .45rem 2rem .45rem .6rem;
+            cursor: pointer;
+            transition: border .2s, box-shadow .2s;
+            min-width: 150px;
+        }
+        .status-select:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(255,75,43,.15); }
+        .status-select.pending { border-color: var(--warning-color); box-shadow: inset 0 0 0 1px var(--warning-color); }
+        .status-select.confirmed { border-color: var(--info-color); box-shadow: inset 0 0 0 1px var(--info-color); }
+        .status-select.preparing { border-color: #9c27b0; box-shadow: inset 0 0 0 1px #9c27b0; }
+        .status-select.delivered { border-color: var(--success-color); box-shadow: inset 0 0 0 1px var(--success-color); }
+        .status-select.cancelled { border-color: var(--danger-color); box-shadow: inset 0 0 0 1px var(--danger-color); }
         @media (max-width: 768px) {
             .container { padding: 0 0.5rem; }
             .orders-table th, .orders-table td { padding: 0.5rem; font-size: 0.95rem; }
@@ -182,6 +217,25 @@ $orders = $stmt->fetchAll();
         </div>
     </div>
     <div class="container">
+        <?php if (!empty($_GET['updated'])): ?>
+            <div class="toast" id="statusToast">Order status updated successfully.</div>
+            <script>
+                setTimeout(function(){
+                    var t = document.getElementById('statusToast');
+                    if (t) { t.style.transition = 'opacity .25s ease'; t.style.opacity = '0'; setTimeout(function(){ t.remove(); }, 300); }
+                }, 2200);
+                // Colorize status selects
+                function paintSelect(el){
+                    var val = (el.value || '').toLowerCase();
+                    el.classList.remove('pending','confirmed','preparing','delivered','cancelled');
+                    if (val) el.classList.add(val);
+                }
+                document.querySelectorAll('[data-status-select]').forEach(function(el){
+                    paintSelect(el);
+                    el.addEventListener('change', function(){ paintSelect(el); });
+                });
+            </script>
+        <?php endif; ?>
         <div class="page-header">
             <h1 class="page-title">Order Management</h1>
             <a href="../dashboard/dashboard.php" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
@@ -208,7 +262,7 @@ $orders = $stmt->fetchAll();
                             <form method="POST" action="" style="display:flex; align-items:center; gap:.5rem;">
                                 <input type="hidden" name="action" value="update_status">
                                 <input type="hidden" name="order_id" value="<?php echo (int)$order['order_id']; ?>">
-                                <select name="order_status" style="background:#1f1f1f;color:#fff;border:1px solid #555;border-radius:6px;padding:.35rem .6rem;">
+                                <select name="order_status" class="status-select" data-status-select>
                                     <?php
                                         $statuses = ['Pending','Confirmed','Delivered','Preparing','Cancelled'];
                                         foreach ($statuses as $status) {

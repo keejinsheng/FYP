@@ -284,6 +284,9 @@ function handleImageUpload($fileInput, $oldImage = null) {
             font-size: 0.9rem;
             margin-bottom: 1rem;
         }
+        .stock-ok { color: #9be07a; }
+        .stock-low { color: #ffc107; }
+        .stock-out { color: var(--danger-color); }
 
         .product-actions {
             display: flex;
@@ -434,6 +437,12 @@ function handleImageUpload($fileInput, $oldImage = null) {
             <button class="add-btn" onclick="openAddModal()">
                 <i class="fas fa-plus"></i> Add Product
             </button>
+            <button class="add-btn" onclick="window.location.reload()" style="background:#444;margin-left:0.5rem;">
+                <i class="fas fa-rotate-right"></i> Refresh
+            </button>
+            <button class="add-btn" id="lowStockToggle" style="background:#555;margin-left:0.5rem;">
+                <i class="fas fa-filter"></i> Low Stock Only
+            </button>
         </div>
 
         <?php if ($success_message): ?>
@@ -446,7 +455,7 @@ function handleImageUpload($fileInput, $oldImage = null) {
 
         <div class="products-grid">
             <?php foreach ($products as $product): ?>
-                <div class="product-card">
+                <div class="product-card" data-product-id="<?php echo (int)$product['product_id']; ?>" data-stock="<?php echo (int)$product['stock_quantity']; ?>">
                     <img src="../../food_images/<?php echo htmlspecialchars($product['image'] ?: 'default_food.png'); ?>" 
                          alt="<?php echo htmlspecialchars($product['product_name']); ?>" class="product-image">
                     
@@ -456,7 +465,12 @@ function handleImageUpload($fileInput, $oldImage = null) {
                     
                     <div class="product-category"><?php echo htmlspecialchars($product['category_name']); ?></div>
                     <div class="product-price">RM <?php echo number_format($product['price'], 2); ?></div>
-                    <div class="product-stock">Stock: <?php echo $product['stock_quantity']; ?></div>
+                    <?php 
+                        $stock = (int)$product['stock_quantity'];
+                        $stockClass = $stock <= 0 ? 'stock-out' : ($stock <= 5 ? 'stock-low' : 'stock-ok');
+                        $stockLabel = $stock <= 0 ? 'Out of stock' : ($stock <= 5 ? 'Low stock' : 'In stock');
+                    ?>
+                    <div class="product-stock <?php echo $stockClass; ?>" data-stock-text>Stock: <span data-qty><?php echo $stock; ?></span> <span class="badge <?php echo $stock <= 0 ? 'unavailable' : 'available'; ?>" data-stock-badge style="margin-left:6px;"><?php echo $stockLabel; ?></span></div>
                     
                     <div class="product-actions">
                         <button class="edit-btn" onclick='editProduct(<?php echo json_encode($product); ?>)'>
@@ -587,6 +601,57 @@ function handleImageUpload($fileInput, $oldImage = null) {
             }
         });
     }
+    </script>
+    <script>
+    // Live stock polling
+    function applyStockClasses(card, qty) {
+        const stockDiv = card.querySelector('[data-stock-text]');
+        const badge = card.querySelector('[data-stock-badge]');
+        stockDiv.classList.remove('stock-ok','stock-low','stock-out');
+        let cls = 'stock-ok'; let label = 'In stock'; let badgeCls = 'available';
+        if (qty <= 0) { cls = 'stock-out'; label = 'Out of stock'; badgeCls = 'unavailable'; }
+        else if (qty <= 5) { cls = 'stock-low'; label = 'Low stock'; badgeCls = 'available'; }
+        stockDiv.classList.add(cls);
+        badge.classList.remove('available','unavailable');
+        badge.classList.add(badgeCls);
+        badge.textContent = label;
+    }
+
+    async function pollStock() {
+        try {
+            const res = await fetch('stock_api.php', { cache: 'no-store' });
+            if (!res.ok) return;
+            const data = await res.json();
+            const map = new Map(data.map(p => [String(p.product_id), p.stock_quantity]));
+            document.querySelectorAll('.product-card').forEach(card => {
+                const id = card.getAttribute('data-product-id');
+                if (!map.has(id)) return;
+                const qty = parseInt(map.get(id), 10);
+                const qtyEl = card.querySelector('[data-qty]');
+                if (qtyEl) qtyEl.textContent = qty;
+                card.setAttribute('data-stock', qty);
+                applyStockClasses(card, qty);
+            });
+            applyLowStockFilter();
+        } catch (e) { /* ignore */ }
+    }
+    setInterval(pollStock, 5000);
+    window.addEventListener('load', pollStock);
+
+    // Low stock filter
+    let showLowOnly = false;
+    function applyLowStockFilter() {
+        document.querySelectorAll('.product-card').forEach(card => {
+            const qty = parseInt(card.getAttribute('data-stock') || '0', 10);
+            card.style.display = (!showLowOnly || qty <= 5) ? '' : 'none';
+        });
+    }
+    document.getElementById('lowStockToggle').addEventListener('click', function(){
+        showLowOnly = !showLowOnly;
+        this.style.background = showLowOnly ? '#6a1b9a' : '#555';
+        this.innerHTML = '<i class="fas fa-filter"></i> ' + (showLowOnly ? 'Showing Low Stock' : 'Low Stock Only');
+        applyLowStockFilter();
+    });
     </script>
 </body>
 </html> 
