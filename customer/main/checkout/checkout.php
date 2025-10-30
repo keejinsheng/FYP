@@ -117,16 +117,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([$user_id, $address_id, $order_number, $subtotal, $tax_amount, $delivery_fee, $total, $special_instructions]);
             $order_id = $pdo->lastInsertId();
             
-            // Create order items
-            $stmt = $pdo->prepare("
+            // Create order items with stock deduction (transactional)
+            $selectStockStmt = $pdo->prepare("SELECT stock_quantity FROM product WHERE product_id = ? FOR UPDATE");
+            $updateStockStmt = $pdo->prepare("UPDATE product SET stock_quantity = stock_quantity - ? WHERE product_id = ?");
+            $insertItemStmt = $pdo->prepare("
                 INSERT INTO order_item (order_id, product_id, quantity, unit_price, total_price, special_instructions)
                 VALUES (?, ?, ?, ?, ?, ?)
             ");
-            
+
             foreach ($cart_items as $item) {
+                // Lock the product row and validate stock
+                $selectStockStmt->execute([$item['product_id']]);
+                $currentStock = (int)$selectStockStmt->fetchColumn();
+                if ($currentStock < (int)$item['quantity']) {
+                    throw new Exception('Insufficient stock for ' . $item['product_name']);
+                }
+
+                // Deduct stock
+                $updateStockStmt->execute([$item['quantity'], $item['product_id']]);
+
+                // Insert order item
                 $item_total = $item['price'] * $item['quantity'];
-                $stmt->execute([
-                    $order_id, $item['product_id'], $item['quantity'], 
+                $insertItemStmt->execute([
+                    $order_id, $item['product_id'], $item['quantity'],
                     $item['price'], $item_total, $item['special_instructions']
                 ]);
             }

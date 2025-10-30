@@ -41,8 +41,8 @@ if (isLoggedIn()) {
         <div class="nav-right">
             <div class="cart-icon">
                 <a href="../cart/cart.php" class="cart-link">
-                    <i class="fas fa-shopping-cart"></i>
-                    <span class="cart-count"><?php echo $cart_count; ?></span>
+                    <i class="fa-solid fa-cart-shopping icon-cart" aria-hidden="true"></i>
+                    <span class="cart-count" aria-label="Items in cart"><?php echo $cart_count; ?></span>
                 </a>
             </div>
             <div class="user-menu">
@@ -173,9 +173,7 @@ if (isLoggedIn()) {
     color: var(--primary-color);
 }
 
-.cart-icon i {
-    font-size: 1.5rem;
-}
+.icon-cart { font-size: 1.5rem; line-height: 1; }
 
 .cart-count {
     position: absolute;

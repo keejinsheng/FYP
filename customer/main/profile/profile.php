@@ -60,6 +60,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $error_message = "Error deleting address.";
                 }
                 break;
+            
+            case 'update_address':
+                $address_id = (int)$_POST['address_id'];
+                $address_line1 = sanitize($_POST['address_line1']);
+                $address_line2 = sanitize($_POST['address_line2'] ?? '');
+                $city = sanitize($_POST['city']);
+                $state = sanitize($_POST['state']);
+                $postal_code = sanitize($_POST['postal_code']);
+                $country = sanitize($_POST['country'] ?? 'Malaysia');
+                $is_default = isset($_POST['is_default']) ? 1 : 0;
+
+                if ($is_default) {
+                    $stmt = $pdo->prepare("UPDATE delivery_address SET is_default = 0 WHERE user_id = ?");
+                    $stmt->execute([$user_id]);
+                }
+
+                $stmt = $pdo->prepare("UPDATE delivery_address SET address_line1 = ?, address_line2 = ?, city = ?, state = ?, postal_code = ?, country = ?, is_default = ? WHERE address_id = ? AND user_id = ?");
+                if ($stmt->execute([$address_line1, $address_line2, $city, $state, $postal_code, $country, $is_default, $address_id, $user_id])) {
+                    $success_message = "Address updated successfully!";
+                } else {
+                    $error_message = "Error updating address.";
+                }
+                break;
         }
     }
 }
@@ -161,7 +184,16 @@ $recent_orders = $stmt->fetchAll();
                             <p><?php echo htmlspecialchars($address['city'] . ', ' . $address['state'] . ' ' . $address['postal_code']); ?></p>
                             <p><?php echo htmlspecialchars($address['country']); ?></p>
                             <div class="address-actions">
-                                <button class="btn-small btn-edit" onclick="editAddress(<?php echo $address['address_id']; ?>)">Edit</button>
+                                <button class="btn-small btn-edit" onclick='openEditAddressForm(<?php echo json_encode([
+                                    "address_id" => (int)$address["address_id"],
+                                    "address_line1" => $address["address_line1"],
+                                    "address_line2" => $address["address_line2"],
+                                    "city" => $address["city"],
+                                    "state" => $address["state"],
+                                    "postal_code" => $address["postal_code"],
+                                    "country" => $address["country"],
+                                    "is_default" => (int)$address["is_default"],
+                                ]); ?>)'>Edit</button>
                                 <button class="btn-small btn-delete" onclick="deleteAddress(<?php echo $address['address_id']; ?>)">Delete</button>
                             </div>
                         </div>
@@ -199,11 +231,11 @@ $recent_orders = $stmt->fetchAll();
         </div>
     </div>
 
-    <!-- Add Address Modal -->
-    <div id="addAddressModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
-        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--card-bg); padding: 2rem; border-radius: var(--border-radius); width: 90%; max-width: 500px;">
+    <!-- Add Address Modal (standardized and compact) -->
+    <div id="addAddressModal" class="modal" style="display: none;">
+        <div class="modal-content">
             <h3 style="margin-bottom: 1rem;">Add New Address</h3>
-            <form method="POST">
+            <form id="addAddressForm" method="POST">
                 <input type="hidden" name="action" value="add_address">
                 <div class="form-group">
                     <label for="address_line1">Address Line 1</label>
@@ -233,9 +265,52 @@ $recent_orders = $stmt->fetchAll();
                     <input type="checkbox" name="is_default" id="is_default">
                     <label for="is_default">Set as default address</label>
                 </div>
-                <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                <div class="modal-actions">
                     <button type="submit" class="submit-btn">Add Address</button>
-                    <button type="button" class="submit-btn" onclick="hideAddAddressForm()" style="background: var(--text-gray);">Cancel</button>
+                    <button type="button" class="btn-cancel" onclick="hideAddAddressForm()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Address Modal -->
+    <div id="editAddressModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 1rem;">Edit Address</h3>
+            <form id="editAddressForm" method="POST">
+                <input type="hidden" name="action" value="update_address">
+                <input type="hidden" id="edit_address_id" name="address_id">
+                <div class="form-group">
+                    <label for="edit_address_line1">Address Line 1</label>
+                    <input type="text" id="edit_address_line1" name="address_line1" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit_address_line2">Address Line 2 (Optional)</label>
+                    <input type="text" id="edit_address_line2" name="address_line2">
+                </div>
+                <div class="form-group">
+                    <label for="edit_city">City</label>
+                    <input type="text" id="edit_city" name="city" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit_state">State</label>
+                    <input type="text" id="edit_state" name="state" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit_postal_code">Postal Code</label>
+                    <input type="text" id="edit_postal_code" name="postal_code" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit_country">Country</label>
+                    <input type="text" id="edit_country" name="country" required>
+                </div>
+                <div class="form-group default-checkbox">
+                    <input type="checkbox" id="edit_is_default" name="is_default">
+                    <label for="edit_is_default">Set as default address</label>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="submit-btn">Save Changes</button>
+                    <button type="button" class="btn-cancel" onclick="hideEditAddressForm()">Cancel</button>
                 </div>
             </form>
         </div>
@@ -244,9 +319,19 @@ $recent_orders = $stmt->fetchAll();
     <?php include_once __DIR__ . '/../../includes/footer.php'; ?>
 
     <script>
-        function editAddress(addressId) {
-            // Redirect to checkout page with address editing
-            window.location.href = '../checkout/checkout.php?edit_address=' + addressId;
+        function openEditAddressForm(address) {
+            document.getElementById('edit_address_id').value = address.address_id;
+            document.getElementById('edit_address_line1').value = address.address_line1 || '';
+            document.getElementById('edit_address_line2').value = address.address_line2 || '';
+            document.getElementById('edit_city').value = address.city || '';
+            document.getElementById('edit_state').value = address.state || '';
+            document.getElementById('edit_postal_code').value = address.postal_code || '';
+            document.getElementById('edit_country').value = address.country || 'Malaysia';
+            document.getElementById('edit_is_default').checked = !!Number(address.is_default);
+            document.getElementById('editAddressModal').style.display = 'flex';
+            document.body.classList.add('modal-open');
+            // sync button color based on default toggle
+            if (typeof syncDefaultButtons === 'function') { syncDefaultButtons(); }
         }
 
         function deleteAddress(addressId) {
@@ -263,11 +348,18 @@ $recent_orders = $stmt->fetchAll();
         }
 
         function showAddAddressForm() {
-            document.getElementById('addAddressModal').style.display = 'block';
+            document.getElementById('addAddressModal').style.display = 'flex';
+            document.body.classList.add('modal-open');
         }
 
         function hideAddAddressForm() {
             document.getElementById('addAddressModal').style.display = 'none';
+            document.body.classList.remove('modal-open');
+        }
+
+        function hideEditAddressForm() {
+            document.getElementById('editAddressModal').style.display = 'none';
+            document.body.classList.remove('modal-open');
         }
 
         // Close modal when clicking outside
@@ -276,6 +368,38 @@ $recent_orders = $stmt->fetchAll();
                 hideAddAddressForm();
             }
         });
+
+        document.getElementById('editAddressModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideEditAddressForm();
+            }
+        });
+
+        // Turn primary button green when default is checked
+        function bindDefaultToggle(formId, checkboxId) {
+            const form = document.getElementById(formId);
+            const checkbox = document.getElementById(checkboxId);
+            if (!form || !checkbox) return;
+            const primaryBtn = form.querySelector('.submit-btn');
+            const sync = () => {
+                if (checkbox.checked) {
+                    primaryBtn.classList.add('btn-success');
+                } else {
+                    primaryBtn.classList.remove('btn-success');
+                }
+            };
+            checkbox.removeEventListener('change', sync);
+            checkbox.addEventListener('change', sync);
+            sync();
+        }
+
+        function syncDefaultButtons() {
+            bindDefaultToggle('addAddressForm', 'is_default');
+            bindDefaultToggle('editAddressForm', 'edit_is_default');
+        }
+
+        // Initial bind
+        syncDefaultButtons();
     </script>
 </body>
 </html>

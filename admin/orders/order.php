@@ -8,6 +8,20 @@ if (!isAdmin()) {
 
 $pdo = getDBConnection();
 
+// Handle status update
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_status') {
+    $orderId = (int)($_POST['order_id'] ?? 0);
+    $newStatus = trim($_POST['order_status'] ?? '');
+    // Allowed statuses (refined)
+    $allowedStatuses = ['Pending', 'Confirmed', 'Delivered', 'Preparing', 'Cancelled'];
+    if ($orderId > 0 && in_array($newStatus, $allowedStatuses, true)) {
+        $stmt = $pdo->prepare('UPDATE `order` SET order_status = ?, updated_at = NOW() WHERE order_id = ?');
+        $stmt->execute([$newStatus, $orderId]);
+        // PRG pattern to avoid resubmission
+        redirect('order.php');
+    }
+}
+
 // 查询最近20个订单
 $stmt = $pdo->prepare('
     SELECT o.*, u.first_name, u.last_name, u.email
@@ -187,10 +201,27 @@ $orders = $stmt->fetchAll();
                 </thead>
                 <tbody>
                     <?php foreach ($orders as $order): ?>
-                        <tr>
+                    <tr>
                             <td><?php echo htmlspecialchars($order['order_number']); ?></td>
                             <td><?php echo htmlspecialchars($order['first_name'] . ' ' . $order['last_name']); ?><br><span style="color: var(--text-gray); font-size: 0.9em;">(<?php echo htmlspecialchars($order['email']); ?>)</span></td>
-                            <td><span class="order-status status-<?php echo strtolower($order['order_status']); ?>"><?php echo htmlspecialchars($order['order_status']); ?></span></td>
+                        <td>
+                            <form method="POST" action="" style="display:flex; align-items:center; gap:.5rem;">
+                                <input type="hidden" name="action" value="update_status">
+                                <input type="hidden" name="order_id" value="<?php echo (int)$order['order_id']; ?>">
+                                <select name="order_status" style="background:#1f1f1f;color:#fff;border:1px solid #555;border-radius:6px;padding:.35rem .6rem;">
+                                    <?php
+                                        $statuses = ['Pending','Confirmed','Delivered','Preparing','Cancelled'];
+                                        foreach ($statuses as $status) {
+                                            $selected = $status === $order['order_status'] ? 'selected' : '';
+                                            echo '<option value="' . htmlspecialchars($status) . '" ' . $selected . '>' . htmlspecialchars($status) . '</option>';
+                                        }
+                                    ?>
+                                </select>
+                                <button type="submit" class="update-btn" style="background: var(--gradient-primary); color:#fff; border:none; border-radius:6px; padding:.4rem .7rem; cursor:pointer;">
+                                    Update
+                                </button>
+                            </form>
+                        </td>
                             <td><?php echo number_format($order['total_amount'], 2); ?></td>
                             <td><?php echo date('Y-m-d H:i', strtotime($order['created_at'])); ?></td>
                         </tr>

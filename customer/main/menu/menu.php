@@ -18,6 +18,16 @@ $stmt = $pdo->prepare("SELECT p.*, c.category_name
 ");
 $stmt->execute();
 $products = $stmt->fetchAll();
+// Category fallback images for consistent visuals
+$categoryImages = [
+    'Main Course' => 'rendang_beef.png',
+    'Appetizers' => 'siew_mai.png',
+    'Beverages' => 'coffee.png',
+    'Desserts' => 'crepe.png',
+    'Rice Dishes' => 'yeung_chow_fried_rice.png',
+    'Noodles' => 'mie_goreng.png',
+    'Soups' => 'wantan_soup.png',
+];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -32,6 +42,19 @@ $products = $stmt->fetchAll();
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="../../includes/styles.css">
     <link rel="stylesheet" href="menu.css">
+    <style>
+        .menu-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 12px; box-shadow: 0 6px 16px rgba(0,0,0,0.35); background:#1f1f1f; }
+        .add-to-cart { position: relative; overflow: hidden; padding: 0.6rem 1rem; border-radius: 999px; background: linear-gradient(45deg,#FF4B2B,#FF416C); color:#fff; border:none; cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:.5rem; transition: transform .15s ease, box-shadow .15s ease, opacity .2s ease; box-shadow:0 4px 12px rgba(255,65,108,0.3); }
+        .add-to-cart:hover { transform: translateY(-1px); box-shadow:0 6px 16px rgba(255,65,108,0.45); }
+        .add-to-cart:active { transform: translateY(0); }
+        .add-to-cart[disabled] { opacity:.65; cursor:not-allowed; }
+        .add-to-cart .spinner { width:16px; height:16px; border:2px solid rgba(255,255,255,.35); border-top-color:#fff; border-radius:50%; display:none; animation: spin .8s linear infinite; }
+        .add-to-cart.is-loading .spinner { display:inline-block; }
+        .add-to-cart.is-loading .btn-text { opacity:0; }
+        @keyframes spin { to { transform: rotate(360deg);} }
+        .add-to-cart .ripple { position:absolute; border-radius:50%; transform: scale(0); background: rgba(255,255,255,0.35); animation: ripple 600ms linear; pointer-events:none; }
+        @keyframes ripple { to { transform: scale(3); opacity:0; } }
+    </style>
 </head>
 <body>
     <?php include_once __DIR__ . '/../../includes/header.php'; ?>
@@ -68,15 +91,22 @@ $products = $stmt->fetchAll();
         <section class="menu-grid">
             <?php foreach ($products as $product): ?>
                 <div class="menu-item" data-category="<?php echo strtolower($product['category_name']); ?>" data-product-id="<?php echo $product['product_id']; ?>">
-                    <img src="../../../food_images/<?php echo htmlspecialchars($product['image']); ?>" 
+                    <?php 
+                        $imageFile = $product['image'];
+                        if (!$imageFile || !trim($imageFile)) {
+                            $imageFile = $categoryImages[$product['category_name']] ?? 'user.jpg';
+                        }
+                    ?>
+                    <img src="../../../food_images/<?php echo htmlspecialchars($imageFile); ?>" 
                          alt="<?php echo htmlspecialchars($product['product_name']); ?>" class="menu-img">
                     <div class="menu-info">
                         <h3><?php echo htmlspecialchars($product['product_name']); ?></h3>
                         <p><?php echo htmlspecialchars($product['description']); ?></p>
                         <div class="menu-footer">
                             <span class="price">RM <?php echo number_format($product['price'], 2); ?></span>
-                            <button class="add-to-cart" onclick="addToCart(<?php echo $product['product_id']; ?>)">
-                                Add to Cart
+                            <button class="add-to-cart" onclick="enhancedAddToCart(<?php echo $product['product_id']; ?>, this)" aria-label="Add <?php echo htmlspecialchars($product['product_name']); ?> to cart">
+                                <span class="btn-text"><i class="fas fa-cart-plus"></i> Add to Cart</span>
+                                <span class="spinner" aria-hidden="true"></span>
                             </button>
                         </div>
                     </div>
@@ -140,10 +170,23 @@ $products = $stmt->fetchAll();
             });
         }
 
-        function addToCart(productId) {
+        function enhancedAddToCart(productId, btnEl) {
+            if (btnEl) {
+                btnEl.classList.add('is-loading');
+                btnEl.setAttribute('disabled', 'disabled');
+                const rect = btnEl.getBoundingClientRect();
+                const ripple = document.createElement('span');
+                ripple.className = 'ripple';
+                ripple.style.left = (rect.width/2) + 'px';
+                ripple.style.top = (rect.height/2) + 'px';
+                ripple.style.width = ripple.style.height = Math.max(rect.width, rect.height) + 'px';
+                btnEl.appendChild(ripple);
+                setTimeout(() => { if (ripple.parentNode) ripple.parentNode.removeChild(ripple); }, 600);
+            }
             <?php if (isLoggedIn()): ?>
                 // Show quantity selector
                 showQuantitySelector(productId);
+                if (btnEl) { btnEl.classList.remove('is-loading'); btnEl.removeAttribute('disabled'); }
             <?php else: ?>
                 window.location.href = '../login/login.php';
             <?php endif; ?>
