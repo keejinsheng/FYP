@@ -748,6 +748,12 @@ if (isset($_GET['order_id'])) {
                             <?php endif; ?>
                             <?php echo htmlspecialchars($selected_order['city'] . ', ' . $selected_order['state'] . ' ' . $selected_order['postal_code']); ?>
                         </div>
+
+                        <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--text-gray); display: flex; gap: 1rem;">
+                            <a href="../../api/download_receipt.php?order_id=<?php echo $selected_order['order_id']; ?>" class="view-order-btn" target="_blank" style="background: var(--gradient-primary); color: white; text-decoration: none; padding: 0.75rem 1.5rem; border-radius: 8px; display: inline-flex; align-items: center; gap: 0.5rem;">
+                                <i class="fas fa-download"></i> Download Receipt (PDF)
+                            </a>
+                        </div>
                     </div>
 
                     <a href="Cdashboard.php" class="view-order-btn">Back to Orders</a>

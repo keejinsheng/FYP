@@ -370,6 +370,9 @@ $order_data = $order;
         </div>
 
         <div class="action-buttons">
+            <a href="../../api/download_receipt.php<?php echo isset($order_data['order_id']) ? '?order_id=' . $order_data['order_id'] : ''; ?>" class="btn btn-primary" target="_blank">
+                <i class="fas fa-download"></i> Download Receipt (PDF)
+            </a>
             <a href="../dashboard/Cdashboard.php?clear_session=1" class="btn btn-primary">
                 <i class="fas fa-list"></i> View Order History
             </a>
