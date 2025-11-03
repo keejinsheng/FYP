@@ -81,15 +81,29 @@ $stmt = $pdo->prepare("SELECT * FROM category WHERE is_active = 1 ORDER BY categ
 $stmt->execute();
 $categories = $stmt->fetchAll();
 
-// Fetch all products
-$stmt = $pdo->prepare("
-    SELECT p.*, c.category_name 
-    FROM product p 
-    LEFT JOIN category c ON p.category_id = c.category_id 
-    ORDER BY p.product_name
-");
-$stmt->execute();
-$products = $stmt->fetchAll();
+// Search handling and fetch products
+$search = isset($_GET['q']) ? trim($_GET['q']) : '';
+if ($search !== '') {
+	$like = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $search) . '%';
+	$stmt = $pdo->prepare("
+		SELECT p.*, c.category_name 
+		FROM product p 
+		LEFT JOIN category c ON p.category_id = c.category_id 
+		WHERE p.product_name LIKE ? OR c.category_name LIKE ? OR p.description LIKE ? 
+		ORDER BY p.product_name
+	");
+	$stmt->execute([$like, $like, $like]);
+	$products = $stmt->fetchAll();
+} else {
+	$stmt = $pdo->prepare("
+		SELECT p.*, c.category_name 
+		FROM product p 
+		LEFT JOIN category c ON p.category_id = c.category_id 
+		ORDER BY p.product_name
+	");
+	$stmt->execute();
+	$products = $stmt->fetchAll();
+}
 
 // 处理图片上传
 function handleImageUpload($fileInput, $oldImage = null) {
@@ -434,6 +448,11 @@ function handleImageUpload($fileInput, $oldImage = null) {
     <div class="container">
         <div class="page-header">
             <h1 class="page-title">Product Management</h1>
+            <form method="GET" action="product.php" style="display:flex;align-items:center;gap:0.5rem;">
+                <input type="text" name="q" placeholder="Search products..." value="<?php echo htmlspecialchars($search ?? ''); ?>" style="padding:0.6rem 0.8rem;border-radius:6px;border:1px solid #333;background:#111;color:#fff;min-width:220px;" />
+                <button type="submit" class="add-btn" style="background:#2e7d32;"><i class="fas fa-search"></i> Search</button>
+                <a href="product.php" class="add-btn" style="background:#444;"><i class="fas fa-xmark"></i> Clear</a>
+            </form>
             <button class="add-btn" onclick="openAddModal()">
                 <i class="fas fa-plus"></i> Add Product
             </button>

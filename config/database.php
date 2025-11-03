@@ -35,6 +35,44 @@ function isAdmin() {
     return isset($_SESSION['admin_id']);
 }
 
+// Normalize role text (e.g., "Super Admin" -> "superadmin")
+function normalizeRole($role) {
+    return strtolower(preg_replace('/[^a-z]/', '', (string)$role));
+}
+
+// Helper function to check if admin is superadmin
+function isSuperAdmin() {
+    if (!isset($_SESSION['admin_id'])) return false;
+    // Prefer DB check: treat any role containing 'super' (case-insensitive, ignoring spaces/underscores) as superadmin
+    try {
+        $pdo = getDBConnection();
+        $stmt = $pdo->prepare("SELECT role FROM admin_user WHERE admin_id = ? AND is_active = 1");
+        $stmt->execute([$_SESSION['admin_id']]);
+        $role = $stmt->fetchColumn();
+        if ($role !== false && trim((string)$role) !== '') {
+            $_SESSION['admin_role'] = $role; // sync session
+            $norm = normalizeRole($role); // letters only, lowercase
+            if ($norm === 'superadmin' || strpos($norm, 'super') !== false) {
+                return true;
+            }
+            return false;
+        }
+    } catch (Exception $e) {
+        // ignore and fall back
+    }
+    // Fallback to session role if DB not available
+    $sessRole = $_SESSION['admin_role'] ?? '';
+    $norm = normalizeRole($sessRole);
+    return ($norm === 'superadmin' || strpos($norm, 'super') !== false);
+}
+
+// Guard: require superadmin, otherwise redirect to login
+function requireSuperAdmin() {
+    if (!isAdmin() || !isSuperAdmin()) {
+        redirect('../auth/login.php');
+    }
+}
+
 // Helper function to get current user ID
 function getCurrentUserId() {
     return $_SESSION['user_id'] ?? null;

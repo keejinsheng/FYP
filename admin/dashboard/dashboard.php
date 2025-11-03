@@ -8,6 +8,34 @@ if (!isAdmin()) {
 
 $pdo = getDBConnection();
 
+// Determine superadmin from DB (robust)
+$isSuperAdmin = false;
+$roleSource = 'db';
+$rawRoleFromDb = null;
+try {
+    $stmtRole = $pdo->prepare('SELECT role FROM admin_user WHERE admin_id = ? AND is_active = 1');
+    $stmtRole->execute([$_SESSION['admin_id'] ?? 0]);
+    $roleRow = $stmtRole->fetchColumn();
+    $rawRoleFromDb = $roleRow;
+    if ($roleRow !== false && trim((string)$roleRow) !== '') {
+        $_SESSION['admin_role'] = $roleRow; // keep session in sync
+        $norm = strtolower(preg_replace('/[^a-z]/', '', (string)$roleRow));
+        $isSuperAdmin = ($norm === 'superadmin' || strpos($norm, 'super') !== false);
+    } else {
+        // Fallback to session role
+        $roleSource = 'session';
+        $sessRole = $_SESSION['admin_role'] ?? '';
+        $norm = strtolower(preg_replace('/[^a-z]/', '', (string)$sessRole));
+        $isSuperAdmin = ($norm === 'superadmin' || strpos($norm, 'super') !== false);
+    }
+} catch (Exception $e) {
+    // If DB fails, use session
+    $roleSource = 'session';
+    $sessRole = $_SESSION['admin_role'] ?? '';
+    $norm = strtolower(preg_replace('/[^a-z]/', '', (string)$sessRole));
+    $isSuperAdmin = ($norm === 'superadmin' || strpos($norm, 'super') !== false);
+}
+
 // Get statistics
 $stats = [];
 
@@ -348,9 +376,21 @@ $today_revenue = $stmt->fetchColumn() ?: 0;
             </div>
             <div class="admin-info">
                 <span class="admin-name">Welcome, <?php echo htmlspecialchars($_SESSION['admin_first_name'] . ' ' . $_SESSION['admin_last_name']); ?></span>
+                <?php if ($isSuperAdmin): ?>
+                <a href="../staff/staff.php" class="logout-btn" style="background:#6a1b9a;">Manage Admins</a>
+                <?php endif; ?>
                 <a href="../auth/logout.php" class="logout-btn">Logout</a>
             </div>
         </div>
+        <?php if (!empty($_GET['debug'])): ?>
+        <div style="max-width:1400px;margin:0.3rem auto 0;color:#bbb;font-size:0.85rem;padding:0 2rem;">
+            <?php
+            $rawRole = ($roleSource === 'db' && $rawRoleFromDb !== null) ? $rawRoleFromDb : ($_SESSION['admin_role'] ?? '(none)');
+            $normRole = strtolower(preg_replace('/[^a-z]/', '', (string)$rawRole));
+            echo 'DEBUG • source=' . $roleSource . ' • rawRole=' . htmlspecialchars((string)$rawRole) . ' • norm=' . htmlspecialchars($normRole) . ' • isSuperAdmin=' . ($isSuperAdmin ? 'true' : 'false') . ' • admin_id=' . (int)($_SESSION['admin_id'] ?? 0);
+            ?>
+        </div>
+        <?php endif; ?>
     </div>
 
     <div class="dashboard-container">
@@ -459,6 +499,12 @@ $today_revenue = $stmt->fetchColumn() ?: 0;
                     <i class="fas fa-chart-bar"></i>
                     View Reports
                 </a>
+                <?php if ($isSuperAdmin): ?>
+                <a href="../staff/staff.php" class="action-btn">
+                    <i class="fas fa-user-shield"></i>
+                    Manage Admins
+                </a>
+                <?php endif; ?>
             </div>
         </div>
     </div>
