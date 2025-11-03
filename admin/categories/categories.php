@@ -163,7 +163,7 @@ $categories = $stmt->fetchAll();
             <a href="../dashboard/dashboard.php" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
         </div>
         <?php if (empty($categories)): ?>
-            <p style="color: var(--text-gray);">暂无分类。</p>
+            <p style="color: var(--text-gray);">No category available.</p>
         <?php else: ?>
             <table class="categories-table">
                 <thead>

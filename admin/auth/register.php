@@ -21,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $last_name = sanitize($_POST['last_name'] ?? '');
     $role = 'Staff'; // Only allow Staff registration by default
     $special_key = $_POST['special_key'] ?? '';
-    $expected_key = 'ABC123'; // special key 现在是 ABC123
+    $expected_key = 'ABC123'; // special key is ABC123
 
     if (empty($username) || empty($email) || empty($password) || empty($confirm_password) || empty($first_name) || empty($last_name) || empty($special_key)) {
         $error_message = 'Please fill in all fields';
