@@ -241,7 +241,7 @@ $orders = $stmt->fetchAll();
             <a href="../dashboard/dashboard.php" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
         </div>
         <?php if (empty($orders)): ?>
-            <p style="color: var(--text-gray);">暂无订单。</p>
+            <p style="color: var(--text-gray);">No orders at present.</p>
         <?php else: ?>
             <table class="orders-table">
                 <thead>
