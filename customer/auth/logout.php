@@ -1,9 +1,21 @@
 <?php
 require_once '../../config/database.php';
 
-session_start();
+// Check if session is started
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Destroy all session data
+session_unset();
 session_destroy();
 
-header('Location: /dwp5431/Group%201/DWP/customer/main/login/login.php');
+// Clear session cookie
+if (isset($_COOKIE[session_name()])) {
+    setcookie(session_name(), '', time() - 3600, '/');
+}
+
+// Redirect to customer login page
+redirect('../main/login/login.php');
 exit;
 ?> 

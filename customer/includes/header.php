@@ -55,7 +55,7 @@ if (isLoggedIn()) {
                         <i class="fas fa-tachometer-alt"></i>
                         Dashboard
                     </a>
-                    <a href="/dwp5431/Group%201/DWP/customer/auth/logout.php" class="logout-link">
+                    <a href="../../auth/logout.php" class="logout-link">
                         <i class="fas fa-sign-out-alt"></i>
                         Logout
                     </a>
