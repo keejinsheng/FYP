@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 03, 2025 at 02:09 AM
+-- Generation Time: Nov 03, 2025 at 06:48 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -45,8 +45,8 @@ CREATE TABLE `admin_user` (
 --
 
 INSERT INTO `admin_user` (`admin_id`, `username`, `email`, `password_hash`, `first_name`, `last_name`, `role`, `is_active`, `created_at`, `updated_at`) VALUES
-(1, 'admin', 'admin@spicefusion.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Admin', 'User', 'Super Admin', 1, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
-(2, 'jason', 'jinsheng122@gmail.com', '$2y$10$AEIJET1Tvy4m5Y8A5ypMHOzFNSe.H7zgYPuo.U.hS2AfUw4tLxHpW', 'kee', 'jin sheng', 'Staff', 1, '2025-10-30 20:37:04', '2025-10-30 20:37:04');
+(2, 'jason', 'jinsheng122@gmail.com', '$2y$10$AEIJET1Tvy4m5Y8A5ypMHOzFNSe.H7zgYPuo.U.hS2AfUw4tLxHpW', 'kee', 'jin sheng', '', 1, '2025-10-30 20:37:04', '2025-11-03 17:38:42'),
+(3, 'Shaun', 'shaun123@gmail.com', '$2y$10$XNd.3RaVEzaS12M39AMsue.2ISG.fTSchCVoSpXSf8nVL9.QZq6Gm', 'Chua Shen', 'Lin Shaun', 'Staff', 1, '2025-11-03 17:20:25', '2025-11-03 17:20:25');
 
 -- --------------------------------------------------------
 
@@ -422,7 +422,7 @@ ALTER TABLE `user`
 -- AUTO_INCREMENT for table `admin_user`
 --
 ALTER TABLE `admin_user`
-  MODIFY `admin_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `admin_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `category`
@@ -476,7 +476,7 @@ ALTER TABLE `security_questions`
 -- AUTO_INCREMENT for table `shopping_cart`
 --
 ALTER TABLE `shopping_cart`
-  MODIFY `cart_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `cart_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `user`
