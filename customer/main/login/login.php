@@ -10,7 +10,7 @@ $show_security_question = false;
 $reset_email = '';
 $security_question = '';
 
-// Clear reset success session if not in forgot password POST
+// Clear reset success session if not in forgot password POST.
 if (!isset($_POST['forgot_password_step2'])) {
     unset($_SESSION['reset_success']);
 }
