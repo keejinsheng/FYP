@@ -99,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'], $_POST['pass
     }
 }
 
-// --- 改进的忘记密码逻辑（从这里开始替换）---
+// --- 忘记密码逻辑（从这里开始替换）---
 if ((isset($_POST['forgot_password_step1']) && ($_POST['step'] ?? '1') === '1') || (isset($_POST['forgot_password_step2']) && ($_POST['step'] ?? '') === '2')) {
     if (isset($_POST['forgot_password_step1']) && ($_POST['step'] ?? '1') === '1') {
         $email = sanitize($_POST['forgot_email'] ?? '');
