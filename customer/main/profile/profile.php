@@ -83,6 +83,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $error_message = "Error updating address.";
                 }
                 break;
+
+case 'change_password':
+    $current_password = $_POST['current_password'];
+    $new_password = $_POST['new_password'];
+    $confirm_password = $_POST['confirm_password'];
+    
+    // 验证输入
+    if (empty($current_password) || empty($new_password) || empty($confirm_password)) {
+        $error_message = "请填写所有密码字段！";
+    } elseif ($new_password !== $confirm_password) {
+        $error_message = "新密码和确认密码不匹配！";
+    } elseif (strlen($new_password) < 6) {
+        $error_message = "新密码长度至少6位！";
+    } else {
+        try {
+            // 先检查用户是否存在
+            $stmt = $pdo->prepare("SELECT * FROM user WHERE user_id = ?");
+            $stmt->execute([$user_id]);
+            $user_data = $stmt->fetch();
+            
+            if (!$user_data) {
+                $error_message = "用户不存在！用户ID: " . $user_id;
+            } else {
+                // 检查password_hash字段是否存在
+                if (!isset($user_data['password_hash'])) {
+                    $error_message = "数据库错误：password_hash字段不存在";
+                } else {
+                    // 验证当前密码 - 使用 password_hash 字段
+                    if (password_verify($current_password, $user_data['password_hash'])) {
+                        // 当前密码正确，更新密码 - 更新 password_hash 字段
+                        $hashed_new_password = password_hash($new_password, PASSWORD_DEFAULT);
+                        $update_stmt = $pdo->prepare("UPDATE user SET password_hash = ? WHERE user_id = ?");
+                        
+                        if ($update_stmt->execute([$hashed_new_password, $user_id])) {
+                            $success_message = "密码修改成功！";
+                        } else {
+                            $error_message = "密码修改失败，请稍后重试。";
+                        }
+                    } else {
+                        $error_message = "当前密码不正确！";
+                    }
+                }
+            }
+        } catch (PDOException $e) {
+            // 显示详细的错误信息用于调试
+            $error_message = "数据库错误: " . $e->getMessage();
+        } catch (Exception $e) {
+            $error_message = "系统错误: " . $e->getMessage();
+        }
+    }
+    break;
+
         }
     }
 }
@@ -164,6 +216,26 @@ $recent_orders = $stmt->fetchAll();
                     </div>
                     <button type="submit" class="submit-btn">Update Profile</button>
                 </form>
+                   <!-- 添加修改密码部分 -->
+<div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #eee;">
+    <h3><i class="fas fa-lock"></i> Change Password</h3>
+    <form method="POST" id="changePasswordForm">
+        <input type="hidden" name="action" value="change_password">
+        <div class="form-group">
+            <label for="current_password">Current Password</label>
+            <input type="password" id="current_password" name="current_password" required>
+        </div>
+        <div class="form-group">
+            <label for="new_password">New Password</label>
+            <input type="password" id="new_password" name="new_password" required minlength="6">
+        </div>
+        <div class="form-group">
+            <label for="confirm_password">Confirm New Password</label>
+            <input type="password" id="confirm_password" name="confirm_password" required minlength="6">
+        </div>
+        <button type="submit" class="submit-btn" style="background-color: #28a745;">Change Password</button>
+    </form>
+</div>
             </div>
 
             <!-- Delivery Addresses -->
@@ -313,6 +385,7 @@ $recent_orders = $stmt->fetchAll();
                     <button type="button" class="btn-cancel" onclick="hideEditAddressForm()">Cancel</button>
                 </div>
             </form>
+
         </div>
     </div>
 
@@ -330,6 +403,7 @@ $recent_orders = $stmt->fetchAll();
             document.getElementById('edit_is_default').checked = !!Number(address.is_default);
             document.getElementById('editAddressModal').style.display = 'flex';
             document.body.classList.add('modal-open');
+
             // sync button color based on default toggle
             if (typeof syncDefaultButtons === 'function') { syncDefaultButtons(); }
         }
@@ -400,6 +474,24 @@ $recent_orders = $stmt->fetchAll();
 
         // Initial bind
         syncDefaultButtons();
-    </script>
+
+// 密码表单验证
+document.getElementById('changePasswordForm')?.addEventListener('submit', function(e) {
+    const newPassword = document.getElementById('new_password').value;
+    const confirmPassword = document.getElementById('confirm_password').value;
+    
+    if (newPassword !== confirmPassword) {
+        e.preventDefault();
+        alert('新密码和确认密码不匹配！');
+        return false;
+    }
+    
+    if (newPassword.length < 6) {
+        e.preventDefault();
+        alert('密码长度至少6位！');
+        return false;
+    }
+});
+</script>
 </body>
 </html>
