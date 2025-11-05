@@ -91,11 +91,11 @@ case 'change_password':
     
     // 验证输入
     if (empty($current_password) || empty($new_password) || empty($confirm_password)) {
-        $error_message = "请填写所有密码字段！";
+        $error_message = "Please fill in all password fields!";
     } elseif ($new_password !== $confirm_password) {
-        $error_message = "新密码和确认密码不匹配！";
+        $error_message = "New password and confirmation password do not match!";
     } elseif (strlen($new_password) < 6) {
-        $error_message = "新密码长度至少6位！";
+        $error_message = "New password must be at least 6 characters long!";
     } else {
         try {
             // 先检查用户是否存在
@@ -104,11 +104,11 @@ case 'change_password':
             $user_data = $stmt->fetch();
             
             if (!$user_data) {
-                $error_message = "用户不存在！用户ID: " . $user_id;
+                $error_message = "User does not exist! User ID: " . $user_id;
             } else {
                 // 检查password_hash字段是否存在
                 if (!isset($user_data['password_hash'])) {
-                    $error_message = "数据库错误：password_hash字段不存在";
+                    $error_message = "Database error! The password_hash field does not exist.";
                 } else {
                     // 验证当前密码 - 使用 password_hash 字段
                     if (password_verify($current_password, $user_data['password_hash'])) {
@@ -117,20 +117,20 @@ case 'change_password':
                         $update_stmt = $pdo->prepare("UPDATE user SET password_hash = ? WHERE user_id = ?");
                         
                         if ($update_stmt->execute([$hashed_new_password, $user_id])) {
-                            $success_message = "密码修改成功！";
+                            $success_message = "Password changed successfully!";
                         } else {
-                            $error_message = "密码修改失败，请稍后重试。";
+                            $error_message = "Password change failed. Please try again later.";
                         }
                     } else {
-                        $error_message = "当前密码不正确！";
+                        $error_message = "Current password is incorrect!";
                     }
                 }
             }
         } catch (PDOException $e) {
             // 显示详细的错误信息用于调试
-            $error_message = "数据库错误: " . $e->getMessage();
+            $error_message = "Database error: " . $e->getMessage();
         } catch (Exception $e) {
-            $error_message = "系统错误: " . $e->getMessage();
+            $error_message = "System error: " . $e->getMessage();
         }
     }
     break;
@@ -256,7 +256,9 @@ $recent_orders = $stmt->fetchAll();
                             <p><?php echo htmlspecialchars($address['city'] . ', ' . $address['state'] . ' ' . $address['postal_code']); ?></p>
                             <p><?php echo htmlspecialchars($address['country']); ?></p>
                             <div class="address-actions">
-                                <button class="btn-small btn-edit" onclick='openEditAddressForm(<?php echo json_encode([
+                                <button class="btn-small btn-edit" onclick='openEditAddressForm(
+                                <?php echo json_encode
+                                ([
                                     "address_id" => (int)$address["address_id"],
                                     "address_line1" => $address["address_line1"],
                                     "address_line2" => $address["address_line2"],
@@ -482,13 +484,13 @@ document.getElementById('changePasswordForm')?.addEventListener('submit', functi
     
     if (newPassword !== confirmPassword) {
         e.preventDefault();
-        alert('新密码和确认密码不匹配！');
+        alert('New password and confirmation password do not match!');
         return false;
     }
     
     if (newPassword.length < 6) {
         e.preventDefault();
-        alert('密码长度至少6位！');
+        alert('Password must be at least 6 characters long!');
         return false;
     }
 });
