@@ -475,63 +475,37 @@ if ((isset($_POST['forgot_password_step1']) && ($_POST['step'] ?? '1') === '1') 
         </div>
     </div>
 
-    <!-- Forgot Password Modal -->
-    <div class="modal" id="forgotModal">
-        <div class="modal-content">
-            <button class="close-modal" onclick="closeForgotModal()">&times;</button>
-            <div class="modal-header">
-                <h2>Forgot Password</h2>
-                <p>Reset your password using your security question</p>
+   <!-- Forgot Password Modal -->
+<div class="modal" id="forgotModal">
+    <div class="modal-content">
+        <button class="close-modal" onclick="closeForgotModal()">&times;</button>
+        <div class="modal-header">
+            <h2>Forgot Password</h2>
+            <p>Enter your email to receive a reset link</p>
+        </div>
+        
+        <?php if ($forgot_error_message): ?>
+            <div class="alert alert-error"><?php echo htmlspecialchars($forgot_error_message); ?></div>
+        <?php endif; ?>
+        
+        <?php if ($forgot_success_message): ?>
+            <div class="alert alert-success"><?php echo htmlspecialchars($forgot_success_message); ?></div>
+        <?php endif; ?>
+
+        <form method="POST" action="forgot_password.php">
+            <div class="form-group">
+                <label for="forgot_email">Email Address</label>
+                <input type="email" id="forgot_email" name="email" required>
             </div>
-            <?php if ($forgot_error_message): ?>
-                <div class="alert alert-error"><?php echo htmlspecialchars($forgot_error_message); ?></div>
-            <?php endif; ?>
-            <?php if (isset($_SESSION['reset_success']) && $_SESSION['reset_success']): ?>
-                <div class="alert alert-success" style="text-align:center; font-size:1.1rem; margin-bottom:1.5rem;">
-                    Password reset successful! You can now login.
-                </div>
-                <div style="text-align:center;">
-                    <button class="login-btn" onclick="closeForgotModal();">Back to Login</button>
-                </div>
-                <?php unset($_SESSION['reset_success']); ?>
-            <?php elseif (!$show_security_question): ?>
-                <form method="POST" action="">
-                    <input type="hidden" name="step" value="1">
-                    <div class="form-group">
-                        <label for="forgot_email">Email Address</label>
-                        <input type="email" id="forgot_email" name="forgot_email" required>
-                    </div>
-                    <button type="submit" name="forgot_password_step1" class="login-btn">Next</button>
-                </form>
-            <?php elseif ($show_security_question): ?>
-                <form method="POST" action="">
-                    <input type="hidden" name="step" value="2">
-                    <input type="hidden" name="reset_email" value="<?php echo htmlspecialchars($reset_email); ?>">
-                    <div class="form-group">
-                        <label for="security_question">Security Question</label>
-                        <input type="text" id="security_question" name="security_question" value="<?php echo htmlspecialchars($security_question); ?>" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label for="security_answer">Your Answer</label>
-                        <input type="text" id="security_answer" name="security_answer" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="new_password">New Password</label>
-                        <input type="password" id="new_password" name="new_password" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="confirm_password">Confirm New Password</label>
-                        <input type="password" id="confirm_password" name="confirm_password" required>
-                    </div>
-                    <button type="submit" name="forgot_password_step2" class="login-btn">Reset Password</button>
-                </form>
-            <?php endif; ?>
-            <div class="back-to-login">
-                <a href="#" onclick="closeForgotModal()">Back to Login</a>
-            </div>
+            <button type="submit" class="login-btn">Send Reset Link</button>
+        </form>
+        
+        <div class="back-to-login">
+            <a href="#" onclick="closeForgotModal()">Back to Login</a>
         </div>
     </div>
-
+</div>
+  
     <script>
         function openForgotModal() {
             document.getElementById('forgotModal').classList.add('active');
