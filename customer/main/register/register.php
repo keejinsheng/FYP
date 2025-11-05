@@ -30,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($username) || empty($email) || empty($password) || empty($confirm_password) || empty($first_name) || empty($last_name) || empty($security_question_id) || empty($security_answer)) {
         $error_message = 'Please fill in all required fields';
     } elseif ($password !== $confirm_password) {
-        $error_message = 'Passwords do not match. ['.htmlspecialchars($password).' != '.htmlspecialchars($confirm_password).']';
+        $error_message = 'Passwords do not match. ';
     } elseif (strlen($password) < 6) {
         $error_message = 'Password must be at least 6 characters long';
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -65,10 +65,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $security_question_id, $security_answer_hash
                     ]);
                     
-                    $success_message = 'Registration successful! You can now login.';
+                    $success_message = 'Registration successful! Redirecting to login page... ';
                     
                     // Clear form data
                     $_POST = array();
+                    header("refresh:2;url=../login/login.php"); // 2秒后跳转到登录页面
                 }
             }
         } catch (Exception $e) {

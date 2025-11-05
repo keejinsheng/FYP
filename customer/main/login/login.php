@@ -57,7 +57,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'], $_POST['pass
     }
 }
 
-// --- Forgot password with security question logic ---
+// Always clear forgot password state on GET (not POST)
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    $forgot_error_message = "";
+    $forgot_success_message = "";
+    $show_security_question = false;
+    $reset_email = "";
+    $security_question = "";
+}
+
+// Before modal rendering, ensure reset_success is only set after a real POST
+if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_SESSION['reset_success'])) {
+    unset($_SESSION['reset_success']);
+}
+
+// Handle login form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'], $_POST['password']) && !isset($_POST['step'])) {
+    $email = sanitize($_POST['email'] ?? '');
+    $password = $_POST['password'] ?? '';
+    if (empty($email) || empty($password)) {
+        $error_message = 'Please fill in all fields';
+    } else {
+        try {
+            $pdo = getDBConnection();
+            $stmt = $pdo->prepare("SELECT user_id, username, email, password_hash, first_name, last_name FROM user WHERE email = ? AND is_active = 1");
+            $stmt->execute([$email]);
+            $user = $stmt->fetch();
+            if ($user && password_verify($password, $user['password_hash'])) {
+                $_SESSION['user_id'] = $user['user_id'];
+                $_SESSION['username'] = $user['username'];
+                $_SESSION['email'] = $user['email'];
+                $_SESSION['first_name'] = $user['first_name'];
+                $_SESSION['last_name'] = $user['last_name'];
+                redirect('../index/index.php');
+            } else {
+                $error_message = 'Invalid email or password';
+            }
+        } catch (Exception $e) {
+            $error_message = 'Login failed. Please try again.';
+        }
+    }
+}
+
+// --- 改进的忘记密码逻辑（从这里开始替换）---
 if ((isset($_POST['forgot_password_step1']) && ($_POST['step'] ?? '1') === '1') || (isset($_POST['forgot_password_step2']) && ($_POST['step'] ?? '') === '2')) {
     if (isset($_POST['forgot_password_step1']) && ($_POST['step'] ?? '1') === '1') {
         $email = sanitize($_POST['forgot_email'] ?? '');
@@ -66,72 +108,72 @@ if ((isset($_POST['forgot_password_step1']) && ($_POST['step'] ?? '1') === '1') 
         } else {
             try {
                 $pdo = getDBConnection();
-                $stmt = $pdo->prepare("SELECT u.user_id, u.security_question_id, sq.question FROM user u LEFT JOIN security_questions sq ON u.security_question_id = sq.id WHERE u.email = ? AND u.is_active = 1");
+                $stmt = $pdo->prepare("SELECT u.user_id, u.security_question_id, sq.question, u.email FROM user u LEFT JOIN security_questions sq ON u.security_question_id = sq.id WHERE u.email = ? AND u.is_active = 1");
                 $stmt->execute([$email]);
                 $user = $stmt->fetch();
-                if ($user && $user['security_question_id']) {
-                    $show_security_question = true;
-                    $reset_email = $email;
-                    $security_question = $user['question'];
+                if ($user) {
+                    if ($user['security_question_id']) {
+                        $show_security_question = true;
+                        $reset_email = $email;
+                        $security_question = $user['question'];
+                        $forgot_success_message = 'Security question found. Please answer it to reset your password.';
+                    } else {
+                        // 如果没有设置安全问题，提供替代方案
+                        $forgot_error_message = 'No security question set for this account. Please contact customer support or try the email reset method.';
+                    }
                 } else {
-                    $forgot_error_message = 'Email address not found or no security question set.';
+                    $forgot_error_message = 'Email address not found or account is inactive.';
                 }
             } catch (Exception $e) {
-                $forgot_error_message = 'Failed to process request. Please try again.';
+                $forgot_error_message = 'Failed to process request. Please try again. Error: ' . $e->getMessage();
             }
         }
     } elseif (isset($_POST['forgot_password_step2']) && ($_POST['step'] ?? '') === '2') {
         $pdo = getDBConnection();
         $email = sanitize($_POST['reset_email'] ?? '');
-        $answer = $_POST['security_answer'] ?? '';
+        $answer = trim($_POST['security_answer'] ?? '');
         $new_password = $_POST['new_password'] ?? '';
         $confirm_password = $_POST['confirm_password'] ?? '';
-        if (empty($answer) || empty($new_password) || empty($confirm_password)) {
-            $forgot_error_message = 'Please fill in all fields';
-            $show_security_question = true;
-            $reset_email = $email;
-            $stmt = $pdo->prepare("SELECT sq.question FROM user u LEFT JOIN security_questions sq ON u.security_question_id = sq.id WHERE u.email = ?");
-            $stmt->execute([$email]);
-            $security_question = $stmt->fetchColumn();
+        
+        // 更详细的验证
+        if (empty($answer)) {
+            $forgot_error_message = 'Please provide the answer to your security question';
+        } elseif (empty($new_password)) {
+            $forgot_error_message = 'Please enter a new password';
+        } elseif (empty($confirm_password)) {
+            $forgot_error_message = 'Please confirm your new password';
         } elseif ($new_password !== $confirm_password) {
             $forgot_error_message = 'Passwords do not match';
-            $show_security_question = true;
-            $reset_email = $email;
-            $stmt = $pdo->prepare("SELECT sq.question FROM user u LEFT JOIN security_questions sq ON u.security_question_id = sq.id WHERE u.email = ?");
-            $stmt->execute([$email]);
-            $security_question = $stmt->fetchColumn();
         } elseif (strlen($new_password) < 6) {
             $forgot_error_message = 'Password must be at least 6 characters long';
-            $show_security_question = true;
-            $reset_email = $email;
-            $stmt = $pdo->prepare("SELECT sq.question FROM user u LEFT JOIN security_questions sq ON u.security_question_id = sq.id WHERE u.email = ?");
-            $stmt->execute([$email]);
-            $security_question = $stmt->fetchColumn();
         } else {
+            // 验证安全问题答案
             $stmt = $pdo->prepare("SELECT security_answer_hash FROM user WHERE email = ?");
             $stmt->execute([$email]);
             $answer_hash = $stmt->fetchColumn();
+            
             if ($answer_hash && password_verify($answer, $answer_hash)) {
                 $password_hash = password_hash($new_password, PASSWORD_DEFAULT);
                 $stmt = $pdo->prepare("UPDATE user SET password_hash = ? WHERE email = ?");
                 $result = $stmt->execute([$password_hash, $email]);
+                
                 if ($result) {
-                    $stmt = $pdo->prepare("SELECT password_hash FROM user WHERE email = ?");
-                    $stmt->execute([$email]);
-                    $debug_hash = $stmt->fetchColumn();
-                    error_log('DEBUG: new hash=' . $debug_hash);
                     $_SESSION['reset_success'] = true;
                     $show_security_question = false;
+                    // 清除所有忘记密码相关的session
+                    unset($_SESSION['forgot_email']);
+                    unset($_SESSION['security_question']);
                 } else {
-                    $forgot_error_message = 'Password reset failed, please try again.';
+                    $forgot_error_message = 'Password reset failed. Please try again.';
                     $show_security_question = true;
                     $reset_email = $email;
+                    // 重新获取安全问题
                     $stmt = $pdo->prepare("SELECT sq.question FROM user u LEFT JOIN security_questions sq ON u.security_question_id = sq.id WHERE u.email = ?");
                     $stmt->execute([$email]);
                     $security_question = $stmt->fetchColumn();
                 }
             } else {
-                $forgot_error_message = 'Incorrect security answer';
+                $forgot_error_message = 'Incorrect security answer. Please try again.';
                 $show_security_question = true;
                 $reset_email = $email;
                 $stmt = $pdo->prepare("SELECT sq.question FROM user u LEFT JOIN security_questions sq ON u.security_question_id = sq.id WHERE u.email = ?");
@@ -141,6 +183,8 @@ if ((isset($_POST['forgot_password_step1']) && ($_POST['step'] ?? '1') === '1') 
         }
     }
 }
+// --- 忘记密码逻辑结束 ---
+
 ?>
 <!DOCTYPE html>
 <html lang="en">

@@ -1,38 +1,47 @@
 <?php
 session_start();
-
-// 包含数据库配置
 require_once '../../config/database.php';
 
-$page_title = "重置密码";
+$page_title = "Forgot Password";
 ?>
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $page_title; ?></title>
+    <title>Forgot Password - Spice Fusion</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="../includes/styles.css">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 500px;
+        .auth-container {
+            max-width: 400px;
             margin: 50px auto;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        .card {
+            padding: 2rem;
             background: white;
-            padding: 30px;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
+        .auth-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .auth-header h1 {
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        .auth-header p {
+            color: #666;
+        }
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 1rem;
         }
         label {
             display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
             color: #333;
         }
         input[type="email"] {
@@ -43,30 +52,39 @@ $page_title = "重置密码";
             font-size: 16px;
             box-sizing: border-box;
         }
-        button {
+        .submit-btn {
+            width: 100%;
             background-color: #007bff;
             color: white;
-            padding: 12px 30px;
+            padding: 12px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
             font-size: 16px;
-            width: 100%;
+            margin-top: 1rem;
         }
-        button:hover {
+        .submit-btn:hover {
             background-color: #0056b3;
         }
-        .alert {
+        .back-link {
+            text-align: center;
+            margin-top: 1rem;
+        }
+        .back-link a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .message {
             padding: 12px;
             border-radius: 4px;
-            margin-bottom: 20px;
+            margin-bottom: 1rem;
         }
-        .alert-success {
+        .message.success {
             background-color: #d4edda;
             border: 1px solid #c3e6cb;
             color: #155724;
         }
-        .alert-error {
+        .message.error {
             background-color: #f8d7da;
             border: 1px solid #f5c6cb;
             color: #721c24;
@@ -74,48 +92,37 @@ $page_title = "重置密码";
     </style>
 </head>
 <body>
-    <div class="card">
-        <h2 style="text-align: center; margin-bottom: 30px; color: #333;">重置密码</h2>
-        
-        <?php
-        // 显示状态消息
-        if(isset($_SESSION['status'])) {
-            echo '<div class="alert alert-success">';
-            echo '<h5>' . $_SESSION['status'] . '</h5>';
-            echo '</div>';
-            unset($_SESSION['status']);
-        }
-        
-        if(isset($_SESSION['reset_email'])) {
-            $email = $_SESSION['reset_email'];
-        } else {
-            // 如果没有设置重置邮箱，重定向到忘记密码页面
-            header("Location: forgot_password.php");
-            exit;
-        }
-        ?>
+    <?php include_once __DIR__ . '/../includes/header.php'; ?>
 
-        <form action="password_reset_process.php" method="POST">
-            <div class="form-group">
-                <label for="email">邮箱地址：</label>
-                <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($email); ?>" readonly class="form-control">
-            </div>
-            <div class="form-group">
-                <label for="new_password">新密码：</label>
-                <input type="password" id="new_password" name="new_password" required class="form-control" placeholder="请输入新密码">
-            </div>
-            <div class="form-group">
-                <label for="confirm_password">确认新密码：</label>
-                <input type="password" id="confirm_password" name="confirm_password" required class="form-control" placeholder="请再次输入新密码">
-            </div>
-            <div class="form-group">
-                <button type="submit" name="reset_password">重置密码</button>
-            </div>
-        </form>
-        
-        <?php if(isset($msg)): ?>
-            <div class="alert alert-error"><?php echo $msg; ?></div>
+    <div class="auth-container">
+        <div class="auth-header">
+            <h1>Reset Your Password</h1>
+            <p>Enter your email address and we'll send you a link to reset your password.</p>
+        </div>
+
+        <?php if (isset($_SESSION['status'])): ?>
+            <div class="message success"><?php echo $_SESSION['status']; ?></div>
+            <?php unset($_SESSION['status']); ?>
         <?php endif; ?>
+
+        <?php if (isset($_SESSION['error'])): ?>
+            <div class="message error"><?php echo $_SESSION['error']; ?></div>
+            <?php unset($_SESSION['error']); ?>
+        <?php endif; ?>
+
+        <form action="forgot_password_process.php" method="POST">
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" required placeholder="Enter your email address">
+            </div>
+            <button type="submit" class="submit-btn">Send Reset Link</button>
+        </form>
+
+        <div class="back-link">
+            <a href="login.php"><i class="fas fa-arrow-left"></i> Back to Login</a>
+        </div>
     </div>
+
+    <?php include_once __DIR__ . '/../includes/footer.php'; ?>
 </body>
 </html>
