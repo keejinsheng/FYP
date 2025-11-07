@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 04, 2025 at 06:03 AM
+-- Generation Time: Nov 05, 2025 at 06:32 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -45,7 +45,7 @@ CREATE TABLE `admin_user` (
 --
 
 INSERT INTO `admin_user` (`admin_id`, `username`, `email`, `password_hash`, `first_name`, `last_name`, `role`, `is_active`, `created_at`, `updated_at`) VALUES
-(2, 'jason', 'jinsheng122@gmail.com', '$2y$10$AEIJET1Tvy4m5Y8A5ypMHOzFNSe.H7zgYPuo.U.hS2AfUw4tLxHpW', 'kee', 'jin sheng', '', 1, '2025-10-30 20:37:04', '2025-11-03 17:38:42'),
+(2, 'jason', 'jinsheng122@gmail.com', '$2y$10$AEIJET1Tvy4m5Y8A5ypMHOzFNSe.H7zgYPuo.U.hS2AfUw4tLxHpW', 'kee', 'jin sheng', 'Super Admin', 1, '2025-10-30 20:37:04', '2025-11-04 02:13:41'),
 (3, 'Shaun', 'shaun123@gmail.com', '$2y$10$XNd.3RaVEzaS12M39AMsue.2ISG.fTSchCVoSpXSf8nVL9.QZq6Gm', 'Chua Shen', 'Lin Shaun', 'Staff', 1, '2025-11-03 17:20:25', '2025-11-03 17:20:25');
 
 -- --------------------------------------------------------
@@ -161,8 +161,7 @@ INSERT INTO `order_item` (`item_id`, `order_id`, `product_id`, `quantity`, `unit
 (1, 1, 14, 1, 14.90, 14.90, NULL, '2025-10-30 20:48:17'),
 (2, 2, 4, 2, 8.90, 17.80, NULL, '2025-10-30 21:45:29'),
 (3, 3, 6, 3, 10.90, 32.70, NULL, '2025-10-30 21:53:34'),
-(4, 4, 14, 1, 14.90, 14.90, NULL, '2025-10-30 22:09:30'),
-(5, 4, 7, 1, 6.90, 6.90, NULL, '2025-10-30 22:09:30');
+(4, 4, 14, 1, 14.90, 14.90, NULL, '2025-10-30 22:09:30');
 
 -- --------------------------------------------------------
 
@@ -222,7 +221,6 @@ INSERT INTO `product` (`product_id`, `category_id`, `product_name`, `description
 (4, 2, 'Char Siu Bao', 'Steamed BBQ pork buns', 8.90, 'char_siu_bao.png', 1, 30, 15, 1, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
 (5, 2, 'Siew Mai', 'Steamed pork and shrimp dumplings', 12.90, 'siew_mai.png', 1, 35, 15, 0, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
 (6, 2, 'Dumpling', 'Pan-fried dumplings with pork filling', 10.90, 'dumpling.png', 1, 22, 15, 0, '2025-10-28 06:04:20', '2025-10-30 21:53:34'),
-(7, 3, 'Coffee', 'Freshly brewed coffee', 6.90, 'coffee.png', 1, 99, 15, 1, '2025-10-28 06:04:20', '2025-10-30 22:09:30'),
 (8, 3, 'Tea', 'Traditional Chinese tea', 5.90, 'tea.png', 1, 100, 15, 0, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
 (9, 3, 'Lime Juice', 'Refreshing lime juice', 7.90, 'lime_juice.png', 1, 80, 15, 0, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
 (10, 4, 'Taiyaki', 'Fish-shaped waffle with sweet filling', 8.90, 'taiyaki.png', 1, 20, 15, 1, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
@@ -231,7 +229,8 @@ INSERT INTO `product` (`product_id`, `category_id`, `product_name`, `description
 (13, 5, 'Nasi Campur', 'Mixed rice with various side dishes', 18.90, 'nasi_campur.png', 1, 35, 15, 0, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
 (14, 6, 'Char Kuey Teow', 'Stir-fried flat rice noodles', 14.90, 'char_kuey_teow.png', 1, 29, 15, 1, '2025-10-28 06:04:20', '2025-10-30 22:09:30'),
 (15, 6, 'Mie Goreng', 'Indonesian fried noodles', 13.90, 'mie_goreng.png', 1, 30, 15, 0, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
-(16, 7, 'Wantan Soup', 'Clear soup with wonton dumplings', 12.90, 'wantan_soup.png', 1, 25, 15, 0, '2025-10-28 06:04:20', '2025-10-28 06:04:20');
+(16, 7, 'Wantan Soup', 'Clear soup with wonton dumplings', 12.90, 'wantan_soup.png', 1, 25, 15, 0, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
+(17, 2, 'test', 'test', 0.00, 'food_690973d78f0799.82262871.jpeg', 1, 0, 15, 0, '2025-11-04 03:32:39', '2025-11-04 03:33:12');
 
 -- --------------------------------------------------------
 
@@ -311,15 +310,17 @@ CREATE TABLE `user` (
   `security_question_id` int(11) DEFAULT NULL,
   `security_answer_hash` varchar(255) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `reset_token` varchar(100) DEFAULT NULL,
+  `token_expiry` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `user`
 --
 
-INSERT INTO `user` (`user_id`, `username`, `email`, `password_hash`, `first_name`, `last_name`, `phone`, `date_of_birth`, `gender`, `profile_image`, `is_active`, `is_verified`, `security_question_id`, `security_answer_hash`, `created_at`, `updated_at`) VALUES
-(1, 'herry', 'jinsheng122@gmail.com', '$2y$10$Aje0zTE.5w0eAlYOeI8Wru6z7qHYJwaIodWQCsfxTdo5pQMEMWgfK', 'herry', 'potter', '0187826588', '2005-06-13', 'Male', 'user.jpg', 1, 0, 1, '$2y$10$h/vsHVGMbHfsfmunlt6jC.Zw1GZb23ZQJPPgrOB0zgUegPxlEPll2', '2025-10-30 20:39:35', '2025-10-30 20:39:35');
+INSERT INTO `user` (`user_id`, `username`, `email`, `password_hash`, `first_name`, `last_name`, `phone`, `date_of_birth`, `gender`, `profile_image`, `is_active`, `is_verified`, `security_question_id`, `security_answer_hash`, `created_at`, `updated_at`, `reset_token`, `token_expiry`) VALUES
+(1, 'herry', 'jinsheng122@gmail.com', '$2y$10$AnwPrYZXrpEt0qIa7Qoi6uMMy3iaW/udwuVScvtkVfMnSd4MK9Fq.', 'herry', 'potter', '0187826588', '2005-06-13', 'Male', 'user.jpg', 1, 0, 1, '$2y$10$h/vsHVGMbHfsfmunlt6jC.Zw1GZb23ZQJPPgrOB0zgUegPxlEPll2', '2025-10-30 20:39:35', '2025-11-05 17:26:28', NULL, NULL);
 
 --
 -- Indexes for dumped tables
@@ -458,7 +459,7 @@ ALTER TABLE `payment`
 -- AUTO_INCREMENT for table `product`
 --
 ALTER TABLE `product`
-  MODIFY `product_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `product_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 
 --
 -- AUTO_INCREMENT for table `review`
