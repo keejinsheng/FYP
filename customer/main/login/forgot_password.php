@@ -58,12 +58,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 1) {
                     $mail->isSMTP();
                     $mail->Host       = 'smtp.gmail.com';
                     $mail->SMTPAuth   = true;
-                    $mail->Username   = 'limxingyi2626@gmail.com';
-                    $mail->Password   = 'binojjwnutvwzzot';
+                    $mail->Username   = 'spicefusion0711@gmail.com';
+                    $mail->Password   = 'pcfebgfgseufvukz';
                     $mail->SMTPSecure = 'ssl';
                     $mail->Port       = 465;
                     
-                    $mail->setFrom('limxingyi2626@gmail.com', 'Spice Fusion');
+                    $mail->setFrom('spicefusion0711@gmail.com', 'Spice Fusion');
                     $mail->addAddress($email, $user['first_name']);
                     
                     $mail->isHTML(true);

@@ -54,13 +54,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $mail->isSMTP();
                 $mail->Host       = 'smtp.gmail.com';
                 $mail->SMTPAuth   = true;
-                $mail->Username   = 'limxingyi2626@gmail.com';
-                $mail->Password   = 'binojjwnutvwzzot';
+                $mail->Username   = 'spicefusion0711@gmail.com';
+                $mail->Password   = 'pcfebgfgseufvukz';
                 $mail->SMTPSecure = 'ssl';
                 $mail->Port       = 465;
 
                 //Recipients
-                $mail->setFrom('limxingyi2626@gmail.com', 'Spice Fusion');
+                $mail->setFrom('spicefusion@gmail.com', 'Spice Fusion');
                 $mail->addAddress($email, $user['first_name']);
                 
                 //Content
