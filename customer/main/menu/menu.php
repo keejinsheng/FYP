@@ -9,11 +9,11 @@ $stmt = $pdo->prepare("SELECT * FROM category WHERE is_active = 1");
 $stmt->execute();
 $categories = $stmt->fetchAll();
 
-// Fetch all products
+// Fetch all products (including stock_quantity and is_available status)
+// Show all products, even if offline - they will display as "Out of Stock"
 $stmt = $pdo->prepare("SELECT p.*, c.category_name 
     FROM product p 
     LEFT JOIN category c ON p.category_id = c.category_id 
-    WHERE p.is_available = 1
     ORDER BY p.product_name
 ");
 $stmt->execute();
@@ -104,10 +104,22 @@ $categoryImages = [
                         <p><?php echo htmlspecialchars($product['description']); ?></p>
                         <div class="menu-footer">
                             <span class="price">RM <?php echo number_format($product['price'], 2); ?></span>
-                            <button class="add-to-cart" onclick="enhancedAddToCart(<?php echo $product['product_id']; ?>, this)" aria-label="Add <?php echo htmlspecialchars($product['product_name']); ?> to cart">
-                                <span class="btn-text"><i class="fas fa-cart-plus"></i> Add to Cart</span>
-                                <span class="spinner" aria-hidden="true"></span>
-                            </button>
+                            <?php 
+                                $stock = (int)($product['stock_quantity'] ?? 0);
+                                $isAvailable = (int)($product['is_available'] ?? 0);
+                                // Out of stock if: manually taken offline OR stock <= 1
+                                $isOutOfStock = !$isAvailable || $stock <= 1;
+                            ?>
+                            <?php if ($isOutOfStock): ?>
+                                <button class="add-to-cart" disabled style="background: #666; cursor: not-allowed;" aria-label="Out of stock">
+                                    <span class="btn-text"><i class="fas fa-times-circle"></i> Out of Stock</span>
+                                </button>
+                            <?php else: ?>
+                                <button class="add-to-cart" onclick="enhancedAddToCart(<?php echo $product['product_id']; ?>, this)" aria-label="Add <?php echo htmlspecialchars($product['product_name']); ?> to cart">
+                                    <span class="btn-text"><i class="fas fa-cart-plus"></i> Add to Cart</span>
+                                    <span class="spinner" aria-hidden="true"></span>
+                                </button>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>

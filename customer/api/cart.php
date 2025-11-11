@@ -73,11 +73,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         try {
-            // Check if product exists
-            $stmt = $pdo->prepare("SELECT product_id FROM product WHERE product_id = ?");
+            // Check if product exists and is available, and check stock
+            $stmt = $pdo->prepare("SELECT product_id, stock_quantity, is_available FROM product WHERE product_id = ?");
             $stmt->execute([$product_id]);
-            if (!$stmt->fetch()) {
+            $product = $stmt->fetch();
+            
+            if (!$product) {
                 echo json_encode(['success' => false, 'message' => 'Product not found']);
+                exit();
+            }
+            
+            // Check if product is available
+            if (!$product['is_available']) {
+                echo json_encode(['success' => false, 'message' => 'This product is currently unavailable']);
+                exit();
+            }
+            
+            // Check stock quantity (stock <= 1 is considered out of stock)
+            $stock = (int)$product['stock_quantity'];
+            if ($stock <= 1) {
+                echo json_encode(['success' => false, 'message' => 'This product is out of stock']);
                 exit();
             }
             
@@ -87,12 +102,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $existing = $stmt->fetch();
             
             if ($existing) {
-                // Update quantity
+                // Update quantity - check if new total exceeds stock
                 $new_qty = $existing['quantity'] + $quantity;
+                if ($new_qty > $stock) {
+                    echo json_encode(['success' => false, 'message' => 'Insufficient stock. Only ' . $stock . ' item(s) available.']);
+                    exit();
+                }
                 $stmt = $pdo->prepare("UPDATE shopping_cart SET quantity = ? WHERE cart_id = ?");
                 $stmt->execute([$new_qty, $existing['cart_id']]);
             } else {
-                // Add new item
+                // Add new item - check if quantity exceeds stock
+                if ($quantity > $stock) {
+                    echo json_encode(['success' => false, 'message' => 'Insufficient stock. Only ' . $stock . ' item(s) available.']);
+                    exit();
+                }
                 $stmt = $pdo->prepare("INSERT INTO shopping_cart (user_id, product_id, quantity) VALUES (?, ?, ?)");
                 $stmt->execute([$user_id, $product_id, $quantity]);
             }

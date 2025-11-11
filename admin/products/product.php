@@ -61,15 +61,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $success_message = 'Product updated successfully';
             break;
             
-        case 'delete':
+        case 'take_offline':
             $product_id = (int)($_POST['product_id'] ?? 0);
             if ($product_id > 0) {
                 try {
-                    $stmt = $pdo->prepare("DELETE FROM product WHERE product_id = ?");
+                    $stmt = $pdo->prepare("UPDATE product SET is_available = 0 WHERE product_id = ?");
                     $stmt->execute([$product_id]);
-                    $success_message = 'Product deleted successfully';
+                    $success_message = 'Product taken offline successfully';
                 } catch (Exception $e) {
-                    $error_message = 'Error deleting product';
+                    $error_message = 'Error taking product offline';
+                }
+            }
+            break;
+            
+        case 'take_online':
+            $product_id = (int)($_POST['product_id'] ?? 0);
+            if ($product_id > 0) {
+                try {
+                    $stmt = $pdo->prepare("UPDATE product SET is_available = 1 WHERE product_id = ?");
+                    $stmt->execute([$product_id]);
+                    $success_message = 'Product taken online successfully';
+                } catch (Exception $e) {
+                    $error_message = 'Error taking product online';
                 }
             }
             break;
@@ -486,18 +499,32 @@ function handleImageUpload($fileInput, $oldImage = null) {
                     <div class="product-price">RM <?php echo number_format($product['price'], 2); ?></div>
                     <?php 
                         $stock = (int)$product['stock_quantity'];
-                        $stockClass = $stock <= 0 ? 'stock-out' : ($stock <= 5 ? 'stock-low' : 'stock-ok');
-                        $stockLabel = $stock <= 0 ? 'Out of stock' : ($stock <= 5 ? 'Low stock' : 'In stock');
+                        // Stock <= 1 is considered out of stock
+                        $isOutOfStock = $stock <= 1;
+                        $stockClass = $isOutOfStock ? 'stock-out' : ($stock <= 5 ? 'stock-low' : 'stock-ok');
+                        $stockLabel = $isOutOfStock ? 'Out of stock' : ($stock <= 5 ? 'Low stock' : 'In stock');
+                        $isAvailable = (int)$product['is_available'];
                     ?>
-                    <div class="product-stock <?php echo $stockClass; ?>" data-stock-text>Stock: <span data-qty><?php echo $stock; ?></span> <span class="badge <?php echo $stock <= 0 ? 'unavailable' : 'available'; ?>" data-stock-badge style="margin-left:6px;"><?php echo $stockLabel; ?></span></div>
+                    <div class="product-stock <?php echo $stockClass; ?>" data-stock-text>Stock: <span data-qty><?php echo $stock; ?></span> <span class="badge <?php echo $isOutOfStock ? 'unavailable' : 'available'; ?>" data-stock-badge style="margin-left:6px;"><?php echo $stockLabel; ?></span></div>
+                    <?php if (!$isAvailable): ?>
+                    <div style="margin-top: 0.5rem;">
+                        <span class="badge unavailable">Offline</span>
+                    </div>
+                    <?php endif; ?>
                     
                     <div class="product-actions">
                         <button class="edit-btn" onclick='editProduct(<?php echo json_encode($product); ?>)'>
                             <i class="fas fa-edit"></i> Edit
                         </button>
-                        <button class="delete-btn" onclick="deleteProduct(<?php echo $product['product_id']; ?>)">
-                            <i class="fas fa-trash"></i> Delete
+                        <?php if ($isAvailable): ?>
+                        <button class="delete-btn" onclick="takeProductOffline(<?php echo $product['product_id']; ?>)">
+                            <i class="fas fa-power-off"></i> Take Offline
                         </button>
+                        <?php else: ?>
+                        <button class="edit-btn" style="background: var(--success-color);" onclick="takeProductOnline(<?php echo $product['product_id']; ?>)">
+                            <i class="fas fa-power-off"></i> Take Online
+                        </button>
+                        <?php endif; ?>
                     </div>
                 </div>
             <?php endforeach; ?>
@@ -590,13 +617,27 @@ function handleImageUpload($fileInput, $oldImage = null) {
     document.getElementById('productModalBg').addEventListener('click', function(e) {
         if (e.target === this) closeModal();
     });
-    // 删除功能已实现
-    function deleteProduct(productId) {
-        if (confirm('Are you sure you want to delete this product?')) {
+    // Take product offline
+    function takeProductOffline(productId) {
+        if (confirm('Are you sure you want to take this product offline? It will not be visible to customers.')) {
             const form = document.createElement('form');
             form.method = 'POST';
             form.innerHTML = `
-                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="action" value="take_offline">
+                <input type="hidden" name="product_id" value="${productId}">
+            `;
+            document.body.appendChild(form);
+            form.submit();
+        }
+    }
+    
+    // Take product online
+    function takeProductOnline(productId) {
+        if (confirm('Are you sure you want to take this product online? It will be visible to customers.')) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.innerHTML = `
+                <input type="hidden" name="action" value="take_online">
                 <input type="hidden" name="product_id" value="${productId}">
             `;
             document.body.appendChild(form);
@@ -628,7 +669,8 @@ function handleImageUpload($fileInput, $oldImage = null) {
         const badge = card.querySelector('[data-stock-badge]');
         stockDiv.classList.remove('stock-ok','stock-low','stock-out');
         let cls = 'stock-ok'; let label = 'In stock'; let badgeCls = 'available';
-        if (qty <= 0) { cls = 'stock-out'; label = 'Out of stock'; badgeCls = 'unavailable'; }
+        // Stock <= 1 is considered out of stock
+        if (qty <= 1) { cls = 'stock-out'; label = 'Out of stock'; badgeCls = 'unavailable'; }
         else if (qty <= 5) { cls = 'stock-low'; label = 'Low stock'; badgeCls = 'available'; }
         stockDiv.classList.add(cls);
         badge.classList.remove('available','unavailable');
@@ -662,6 +704,7 @@ function handleImageUpload($fileInput, $oldImage = null) {
     function applyLowStockFilter() {
         document.querySelectorAll('.product-card').forEach(card => {
             const qty = parseInt(card.getAttribute('data-stock') || '0', 10);
+            // Show products with stock <= 5 when filter is active
             card.style.display = (!showLowOnly || qty <= 5) ? '' : 'none';
         });
     }

@@ -4,10 +4,10 @@ require_once '../../../config/database.php';
 // Get database connection
 $pdo = getDBConnection();
 
-// Fetch featured products for recommendations
+// Fetch featured products for recommendations (show all, even if offline)
 $stmt = $pdo->prepare("SELECT p.*, c.category_name FROM product p 
                        LEFT JOIN category c ON p.category_id = c.category_id 
-                       WHERE p.is_featured = 1 AND p.is_available = 1 
+                       WHERE p.is_featured = 1
                        ORDER BY p.created_at DESC LIMIT 5");
 $stmt->execute();
 $featured_products = $stmt->fetchAll();
@@ -17,10 +17,9 @@ $stmt = $pdo->prepare("SELECT * FROM category WHERE is_active = 1");
 $stmt->execute();
 $categories = $stmt->fetchAll();
 
-// Fetch products for menu section
+// Fetch products for menu section (show all products, even if offline)
 $stmt = $pdo->prepare("SELECT p.*, c.category_name FROM product p 
                        LEFT JOIN category c ON p.category_id = c.category_id 
-                       WHERE p.is_available = 1 
                        ORDER BY p.product_name");
 $stmt->execute();
 $products = $stmt->fetchAll();

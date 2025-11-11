@@ -1,4 +1,4 @@
-@<?php
+<?php
 require_once '../../config/database.php';
 
 // Check if admin is logged in
@@ -699,7 +699,7 @@ $today_revenue = $stmt->fetchColumn() ?: 0;
 
                 <a href="../categories/categories.php" class="action-btn">
                     <i class="fas fa-tags"></i>
-                    View Categories
+                    Manage Categories
                 </a>
 
                 <a href="../members/member.php" class="action-btn">
