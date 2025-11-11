@@ -7,7 +7,7 @@ $success_message = '';
 // 获取所有安全问题
 try {
     $pdo = getDBConnection();
-    $questions = $pdo->query("SELECT id, question FROM security_questions")->fetchAll();
+
 } catch (Exception $e) {
     $questions = [];
 }
@@ -23,11 +23,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $phone = sanitize($_POST['phone'] ?? '');
     $date_of_birth = $_POST['date_of_birth'] ?? '';
     $gender = sanitize($_POST['gender'] ?? '');
-    $security_question_id = intval($_POST['security_question_id'] ?? 0);
-    $security_answer = $_POST['security_answer'] ?? '';
+
     
     // Validation
-    if (empty($username) || empty($email) || empty($password) || empty($confirm_password) || empty($first_name) || empty($last_name) || empty($security_question_id) || empty($security_answer)) {
+    if (empty($username) || empty($email) || empty($password) || empty($confirm_password) || empty($first_name) || empty($last_name) ) {
         $error_message = 'Please fill in all required fields';
     } elseif ($password !== $confirm_password) {
         $error_message = 'Passwords do not match. ';
@@ -53,16 +52,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     // Create new user
                     $password_hash = password_hash($password, PASSWORD_DEFAULT);
-                    $security_answer_hash = password_hash($security_answer, PASSWORD_DEFAULT);
                     
                     $stmt = $pdo->prepare("
-                        INSERT INTO user (username, email, password_hash, first_name, last_name, phone, date_of_birth, gender, security_question_id, security_answer_hash)
+                        INSERT INTO user (username, email, password_hash, first_name, last_name, phone, date_of_birth, gender)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ");
                     $stmt->execute([
                         $username, $email, $password_hash, $first_name, $last_name, 
                         $phone ?: null, $date_of_birth ?: null, $gender ?: null,
-                        $security_question_id, $security_answer_hash
                     ]);
                     
                     $success_message = 'Registration successful! Redirecting to login page... ';
@@ -313,22 +310,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <option value="Other" <?php echo ($_POST['gender'] ?? '') === 'Other' ? 'selected' : ''; ?>>Other</option>
                         </select>
                     </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="security_question_id">Security Question *</label>
-                    <select id="security_question_id" name="security_question_id" required>
-                        <option value="">Select a question</option>
-                        <?php foreach ($questions as $q): ?>
-                            <option value="<?php echo $q['id']; ?>" <?php echo (($_POST['security_question_id'] ?? '') == $q['id']) ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($q['question']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="security_answer">Security Answer *</label>
-                    <input type="text" id="security_answer" name="security_answer" required value="<?php echo htmlspecialchars($_POST['security_answer'] ?? ''); ?>">
                 </div>
 
                 <button type="submit" class="register-btn">Create Account</button>
