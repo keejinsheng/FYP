@@ -55,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     $stmt = $pdo->prepare("
                         INSERT INTO user (username, email, password_hash, first_name, last_name, phone, date_of_birth, gender)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                     ");
                     $stmt->execute([
                         $username, $email, $password_hash, $first_name, $last_name, 
