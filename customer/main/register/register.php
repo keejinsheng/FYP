@@ -30,7 +30,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error_message = 'Please fill in all required fields';
     } elseif ($password !== $confirm_password) {
         $error_message = 'Passwords do not match. ';
-    } elseif (strlen($password) < 6) {
+    } 
+    // Verify slider captcha
+if (($_POST['captcha_verified'] ?? '0') !== '1') {
+    $error_message = 'Please complete the verification puzzle.';
+}
+
+    elseif (strlen($password) < 6) {
         $error_message = 'Password must be at least 6 characters long';
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error_message = 'Please enter a valid email address';
@@ -311,6 +317,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </select>
                     </div>
                 </div>
+                
+                <!-- ====== Slider Captcha START ====== -->
+<div class="form-group full-width" style="margin-top: 1.5rem;">
+    <label style="margin-bottom:10px; display:block;">Verify you are human *</label>
+
+    <div id="captchaBox" style="padding:10px; background:#222; border:1px solid #444; border-radius:8px;">
+        <p style="font-size:14px; color:#ccc; margin-bottom:10px;">Drag slider to complete puzzle</p>
+
+        <div style="position:relative; width:100%; max-width:300px; margin:auto;">
+            <img id="bgImg" width="100%" style="border-radius:6px;">
+            <img id="blockImg" style="position:absolute; top:0; left:0; width:50px;">
+        </div>
+
+        <input type="range" id="slider" min="0" max="250" value="0" 
+               style="width:100%; margin-top:15px;">
+    </div>
+
+    <!-- 验证成功后存状态 -->
+    <input type="hidden" id="captcha_verified" name="captcha_verified" value="0">
+</div>
+<!-- ====== Slider Captcha END ====== -->
+
 
                 <button type="submit" class="register-btn">Create Account</button>
             </form>
@@ -320,5 +348,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </div>
     </div>
+
+    <script>
+let answerX = 0;
+let slider = document.getElementById("slider");
+let blockImg = document.getElementById("blockImg");
+let verifiedInput = document.getElementById("captcha_verified");
+
+function loadCaptcha() {
+    fetch("captcha.php")
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById("bgImg").src = data.bg;
+            blockImg.src = data.block;
+            answerX = data.answerX;
+            slider.value = 0;
+            blockImg.style.left = "0px";
+            verifiedInput.value = "0";
+        });
+}
+
+// 拖动拼图块
+slider.addEventListener("input", function () {
+    let x = this.value;
+    blockImg.style.left = x + "px";
+});
+
+// 放手后验证
+slider.addEventListener("change", function () {
+    let userX = this.value;
+
+    fetch("verify.php", {
+        method: "POST",
+        headers: {"Content-Type": "application/x-www-form-urlencoded"},
+        body: `userX=${userX}&answerX=${answerX}`
+    })
+    .then(res => res.text())
+    .then(result => {
+        if (result === "success") {
+            alert("✔ Verification Success");
+            verifiedInput.value = "1";
+        } else {
+            alert("✖ Verification Failed. Try again!");
+            loadCaptcha();
+        }
+    });
+});
+
+loadCaptcha();
+</script>
+
 </body>
 </html> 
