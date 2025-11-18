@@ -325,9 +325,9 @@ if (($_POST['captcha_verified'] ?? '0') !== '1') {
     <div id="captchaBox" style="padding:10px; background:#222; border:1px solid #444; border-radius:8px;">
         <p style="font-size:14px; color:#ccc; margin-bottom:10px;">Drag slider to complete puzzle</p>
 
-        <div style="position:relative; width:100%; max-width:300px; margin:auto;">
-            <img id="bgImg" width="100%" style="border-radius:6px;">
-            <img id="blockImg" style="position:absolute; top:0; left:0; width:50px;">
+        <div style="position:relative; width:100%; max-width:300px; margin:auto; min-height:150px;">
+            <img id="bgImg" width="100%" style="border-radius:6px; display:block; max-width:100%; height:auto;" alt="Captcha Background">
+            <img id="blockImg" style="position:absolute; top:0; left:0; width:50px; height:50px; display:block; pointer-events:none;" alt="Captcha Block">
         </div>
 
         <input type="range" id="slider" min="0" max="250" value="0" 
@@ -357,14 +357,28 @@ let verifiedInput = document.getElementById("captcha_verified");
 
 function loadCaptcha() {
     fetch("captcha.php")
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return res.json();
+        })
         .then(data => {
+            if (data.error) {
+                console.error("Captcha Error:", data.error);
+                alert("验证码加载失败: " + data.error);
+                return;
+            }
             document.getElementById("bgImg").src = data.bg;
             blockImg.src = data.block;
             answerX = data.answerX;
             slider.value = 0;
             blockImg.style.left = "0px";
             verifiedInput.value = "0";
+        })
+        .catch(error => {
+            console.error("Captcha Load Error:", error);
+            alert("验证码加载失败，请刷新页面重试");
         });
 }
 

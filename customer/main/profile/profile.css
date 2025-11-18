@@ -16,6 +16,117 @@
     margin-bottom: 1rem;
 }
 
+/* Avatar Section Styles */
+.avatar-section {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+}
+
+.avatar-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.avatar-preview {
+    position: relative;
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 4px solid var(--primary-color);
+    box-shadow: 0 4px 16px rgba(255, 75, 43, 0.3);
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.avatar-preview:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(255, 75, 43, 0.4);
+}
+
+.avatar-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--card-bg);
+    background-color: #3a3a3a;
+    color: var(--text-gray);
+    color: #a0a0a0;
+}
+
+.avatar-placeholder i {
+    font-size: 6.5rem;
+    color: var(--text-gray);
+    color: #888;
+}
+
+.avatar-change-button {
+    margin-top: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.avatar-change-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.6rem !important;
+    padding: 1rem 2.5rem !important;
+    background: #FF4B2B !important;
+    background-color: #FF4B2B !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 30px !important;
+    font-size: 1rem !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 6px 20px rgba(255, 75, 43, 0.4), 0 2px 6px rgba(0, 0, 0, 0.1) !important;
+    text-decoration: none !important;
+    width: 100% !important;
+    max-width: 280px !important;
+    letter-spacing: 0.3px !important;
+    margin: 0 !important;
+    margin-top: 0.5rem !important;
+    box-sizing: border-box !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    font-family: 'Inter', sans-serif !important;
+    line-height: 1.5 !important;
+}
+
+.avatar-change-btn:hover {
+    background: var(--secondary-color) !important;
+    background-color: #FF416C !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 24px rgba(255, 75, 43, 0.5), 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.avatar-change-btn:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 4px 12px rgba(255, 75, 43, 0.4), 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.avatar-change-btn i {
+    font-size: 1.1rem !important;
+    color: white !important;
+}
+
+.avatar-change-btn * {
+    color: white !important;
+}
+
 .profile-content {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -71,17 +182,33 @@
 
 .submit-btn {
     background: var(--primary-color);
+    background-color: #FF4B2B;
     color: white;
-    padding: 0.75rem 2rem;
+    padding: 1rem 2.5rem;
     border: none;
-    border-radius: var(--border-radius);
+    border-radius: 30px;
     cursor: pointer;
     font-size: 1rem;
-    transition: var(--transition);
+    font-weight: 700;
+    transition: all 0.3s ease;
+    box-shadow: 0 6px 20px rgba(255, 75, 43, 0.4), 0 2px 6px rgba(0, 0, 0, 0.1);
+    letter-spacing: 0.3px;
 }
 
 .submit-btn:hover {
-    background: var(--primary-dark);
+    background: var(--secondary-color);
+    background-color: #FF416C;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(255, 75, 43, 0.5), 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.submit-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 12px rgba(255, 75, 43, 0.4), 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.submit-btn i {
+    margin-right: 0.5rem;
 }
 
 /* Success state for primary buttons (used when default checkbox is on) */
@@ -335,6 +462,17 @@ body.modal-open { overflow: hidden; }
     }
     
     .modal-content { width: 95%; padding: 1.25rem; }
+    
+    .avatar-preview {
+        width: 120px;
+        height: 120px;
+    }
+    
+    .avatar-change-btn {
+        font-size: 0.9rem;
+        padding: 0.85rem 2rem;
+        max-width: 100%;
+    }
 }
 
 @media (max-width: 900px) {
