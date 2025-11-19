@@ -37,7 +37,7 @@ function isAdmin() {
 
 // Normalize role text (e.g., "Super Admin" -> "superadmin")
 function normalizeRole($role) {
-    return strtolower(preg_replace('/[^a-z]/', '', (string)$role));
+    return strtolower(preg_replace('/[^a-z]/i', '', (string)$role));
 }
 
 // Helper function to check if admin is superadmin

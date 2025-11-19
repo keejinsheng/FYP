@@ -17,9 +17,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $email = sanitize($_POST['email'] ?? '');
         $first_name = sanitize($_POST['first_name'] ?? '');
         $last_name = sanitize($_POST['last_name'] ?? '');
-        $role = strtolower(trim($_POST['role'] ?? 'admin'));
+        $role = 'Staff'; // new admins default to Staff
         $password = $_POST['password'] ?? '';
-        if ($username && $email && $first_name && $password && in_array($role, ['admin','superadmin'], true)) {
+        if ($username && $email && $first_name && !empty($password)) {
             try {
                 $hash = password_hash($password, PASSWORD_BCRYPT);
                 $stmt = $pdo->prepare("INSERT INTO admin_user (username, email, password_hash, first_name, last_name, role, is_active) VALUES (?, ?, ?, ?, ?, ?, 1)");
@@ -36,10 +36,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $email = sanitize($_POST['email'] ?? '');
         $first_name = sanitize($_POST['first_name'] ?? '');
         $last_name = sanitize($_POST['last_name'] ?? '');
-        $role = strtolower(trim($_POST['role'] ?? 'admin'));
+        $role = trim($_POST['role'] ?? 'Staff');
+        $allowedRoles = ['Staff', 'Manager', 'Super Admin'];
         $is_active = (int)($_POST['is_active'] ?? 1) ? 1 : 0;
         $password = $_POST['password'] ?? '';
-        if ($admin_id > 0 && $email && $first_name && in_array($role, ['admin','superadmin'], true)) {
+        if ($admin_id > 0 && $email && $first_name && in_array($role, $allowedRoles, true)) {
             try {
                 if ($password !== '') {
                     $hash = password_hash($password, PASSWORD_BCRYPT);
@@ -92,8 +93,11 @@ $admins = $stmt->fetchAll();
         .modal { background:#2a2a2a; width:520px; margin:8vh auto; padding:1.2rem 1.4rem; border-radius:10px; }
         .modal label { display:block; margin-top:0.7rem; }
         .modal input, .modal select { width:100%; padding:0.5rem; background:#1a1a1a; color:#fff; border:1px solid #444; border-radius:6px; margin-top:0.3rem; }
+        .modal input[readonly] { background:#2a2a2a; cursor:not-allowed; opacity:0.7; }
         .modal-actions { text-align:right; margin-top:1rem; }
         .btn.secondary { background:#555; }
+        .form-row { display:flex; gap:1.2rem; flex-wrap:wrap; }
+        .form-row > label { flex:1; margin-top:0.7rem; }
     </style>
 </head>
 <body>
@@ -149,36 +153,38 @@ $admins = $stmt->fetchAll();
             <form method="POST" id="adminForm">
                 <input type="hidden" name="action" id="formAction" value="create">
                 <input type="hidden" name="admin_id" id="admin_id">
-                <label>Username
-                    <input type="text" name="username" id="username">
+                <label>Username<span id="usernameRequired" style="color:#dc3545;">*</span>
+                    <input type="text" name="username" id="username" required>
                 </label>
                 <label>Email*
                     <input type="email" name="email" id="email" required>
                 </label>
-                <div style="display:flex; gap:0.7rem;">
-                    <label style="flex:1;">First Name*
+                <div class="form-row">
+                    <label>First Name*
                         <input type="text" name="first_name" id="first_name" required>
                     </label>
-                    <label style="flex:1;">Last Name
+                    <label>Last Name
                         <input type="text" name="last_name" id="last_name">
                     </label>
                 </div>
-                <div style="display:flex; gap:0.7rem;">
-                    <label style="flex:1;">Role*
+                <div class="form-row" id="roleRow">
+                    <label>Role*
                         <select name="role" id="role">
-                            <option value="admin">Admin</option>
-                            <option value="superadmin">Superadmin</option>
+                            <option value="Staff">Staff</option>
+                            <option value="Manager">Manager</option>
+                            <option value="Super Admin">Super Admin</option>
                         </select>
                     </label>
-                    <label style="flex:1;">Active
+                    <label>Active
                         <select name="is_active" id="is_active">
                             <option value="1">Active</option>
                             <option value="0">Disabled</option>
                         </select>
                     </label>
                 </div>
-                <label>Password<?php /* required for create */ ?>
-                    <input type="password" name="password" id="password">
+                <label>Password<span id="passwordRequired" style="color:#dc3545;">*</span>
+                    <input type="password" name="password" id="password" required>
+                    <small style="color:#888; font-size:0.85rem; display:block; margin-top:0.3rem;" id="passwordHint">Leave blank to keep current password (edit mode only)</small>
                 </label>
                 <div class="modal-actions">
                     <button type="button" class="btn secondary" onclick="closeModal()">Cancel</button>
@@ -191,30 +197,55 @@ $admins = $stmt->fetchAll();
     <script>
     const modalBg = document.getElementById('modalBg');
     const form = document.getElementById('adminForm');
+    const roleRow = document.getElementById('roleRow');
+    const roleSelect = document.getElementById('role');
+    const activeSelect = document.getElementById('is_active');
     function openCreate() {
         document.getElementById('modalTitle').innerText = 'New Admin';
         document.getElementById('formAction').value = 'create';
         document.getElementById('admin_id').value = '';
-        document.getElementById('username').value = '';
+        const usernameField = document.getElementById('username');
+        usernameField.value = '';
+        usernameField.removeAttribute('readonly');
+        usernameField.required = true;
+        document.getElementById('usernameRequired').style.display = 'inline';
         document.getElementById('email').value = '';
         document.getElementById('first_name').value = '';
         document.getElementById('last_name').value = '';
-        document.getElementById('role').value = 'admin';
-        document.getElementById('is_active').value = '1';
-        document.getElementById('password').value = '';
+        roleSelect.value = 'Staff';
+        roleSelect.disabled = true;
+        activeSelect.value = '1';
+        activeSelect.disabled = true;
+        const passwordField = document.getElementById('password');
+        passwordField.value = '';
+        passwordField.required = true;
+        document.getElementById('passwordRequired').style.display = 'inline';
+        document.getElementById('passwordHint').style.display = 'none';
+        roleRow.style.display = 'none';
         modalBg.style.display = 'block';
     }
     function openEdit(admin) {
         document.getElementById('modalTitle').innerText = 'Edit Admin';
         document.getElementById('formAction').value = 'update';
         document.getElementById('admin_id').value = admin.admin_id;
-        document.getElementById('username').value = admin.username;
+        const usernameField = document.getElementById('username');
+        usernameField.value = admin.username;
+        usernameField.setAttribute('readonly', 'readonly');
+        usernameField.required = false;
+        document.getElementById('usernameRequired').style.display = 'none';
         document.getElementById('email').value = admin.email;
         document.getElementById('first_name').value = admin.first_name;
         document.getElementById('last_name').value = admin.last_name;
-        document.getElementById('role').value = admin.role;
-        document.getElementById('is_active').value = admin.is_active ? '1' : '0';
-        document.getElementById('password').value = '';
+        roleSelect.value = admin.role;
+        roleSelect.disabled = false;
+        activeSelect.value = admin.is_active ? '1' : '0';
+        activeSelect.disabled = false;
+        const passwordField = document.getElementById('password');
+        passwordField.value = '';
+        passwordField.required = false;
+        document.getElementById('passwordRequired').style.display = 'none';
+        document.getElementById('passwordHint').style.display = 'block';
+        roleRow.style.display = 'flex';
         modalBg.style.display = 'block';
     }
     function closeModal(){ modalBg.style.display = 'none'; }

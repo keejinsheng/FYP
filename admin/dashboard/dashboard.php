@@ -19,20 +19,20 @@ try {
     $rawRoleFromDb = $roleRow;
     if ($roleRow !== false && trim((string)$roleRow) !== '') {
         $_SESSION['admin_role'] = $roleRow; // keep session in sync
-        $norm = strtolower(preg_replace('/[^a-z]/', '', (string)$roleRow));
+        $norm = normalizeRole($roleRow);
         $isSuperAdmin = ($norm === 'superadmin' || strpos($norm, 'super') !== false);
     } else {
         // Fallback to session role
         $roleSource = 'session';
         $sessRole = $_SESSION['admin_role'] ?? '';
-        $norm = strtolower(preg_replace('/[^a-z]/', '', (string)$sessRole));
+        $norm = normalizeRole($sessRole);
         $isSuperAdmin = ($norm === 'superadmin' || strpos($norm, 'super') !== false);
     }
 } catch (Exception $e) {
     // If DB fails, use session
     $roleSource = 'session';
     $sessRole = $_SESSION['admin_role'] ?? '';
-    $norm = strtolower(preg_replace('/[^a-z]/', '', (string)$sessRole));
+    $norm = normalizeRole($sessRole);
     $isSuperAdmin = ($norm === 'superadmin' || strpos($norm, 'super') !== false);
 }
 
