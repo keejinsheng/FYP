@@ -357,50 +357,44 @@ let verifiedInput = document.getElementById("captcha_verified");
 
 function loadCaptcha() {
     fetch("captcha.php")
-        .then(res => {
-            if (!res.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return res.json();
-        })
+        .then(res => res.json())
         .then(data => {
             if (data.error) {
-                console.error("Captcha Error:", data.error);
                 alert("验证码加载失败: " + data.error);
                 return;
             }
+
             document.getElementById("bgImg").src = data.bg;
             blockImg.src = data.block;
+
             answerX = data.answerX;
             slider.value = 0;
             blockImg.style.left = "0px";
             verifiedInput.value = "0";
         })
-        .catch(error => {
-            console.error("Captcha Load Error:", error);
+        .catch(err => {
             alert("验证码加载失败，请刷新页面重试");
         });
 }
 
-// 拖动拼图块
+// 滑动拼图
 slider.addEventListener("input", function () {
-    let x = this.value;
-    blockImg.style.left = x + "px";
+    blockImg.style.left = this.value + "px";
 });
 
-// 放手后验证
+// 松手验证
 slider.addEventListener("change", function () {
     let userX = this.value;
 
     fetch("verify.php", {
         method: "POST",
-        headers: {"Content-Type": "application/x-www-form-urlencoded"},
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: `userX=${userX}&answerX=${answerX}`
     })
-    .then(res => res.text())
+    .then(res => res.json())
     .then(result => {
-        if (result === "success") {
-            alert("✔ Verification Success");
+        if (result.status === "success") {
+            alert("✔ Verification Success!");
             verifiedInput.value = "1";
         } else {
             alert("✖ Verification Failed. Try again!");
