@@ -1,11 +1,11 @@
 <?php
-session_start();
+header("Content-Type: application/json");
 
-$userX = intval($_POST['userX']);
-$answerX = intval($_POST['answerX']);
+$userX   = intval($_POST['userX'] ?? 0);
+$answerX = intval($_POST['answerX'] ?? -999);
 
-if (abs($userX - $answerX) < 6) {
-    echo "success";
+if (abs($userX - $answerX) <= 6) {
+    echo json_encode(["status" => "success"]);
 } else {
-    echo "fail";
+    echo json_encode(["status" => "fail"]);
 }
