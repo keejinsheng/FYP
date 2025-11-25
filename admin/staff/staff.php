@@ -98,6 +98,45 @@ $admins = $stmt->fetchAll();
         .btn.secondary { background:#555; }
         .form-row { display:flex; gap:1.2rem; flex-wrap:wrap; }
         .form-row > label { flex:1; margin-top:0.7rem; }
+        .search-container {
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: flex-end;
+        }
+        .search-box {
+            position: relative;
+            width: 100%;
+            max-width: 320px;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 0.6rem 1rem 0.6rem 2.4rem;
+            border-radius: 8px;
+            border: 1px solid #555;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(255, 75, 43, 0.2);
+        }
+        .search-box i {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #aaa;
+        }
+        .no-results {
+            text-align: center;
+            color: #a0a0a0;
+            padding: 1rem;
+            display: none;
+        }
+        .no-results.show {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -119,9 +158,17 @@ $admins = $stmt->fetchAll();
         <?php if ($success_message): ?><div style="color:#28a745; margin-bottom:1rem;"><?php echo htmlspecialchars($success_message); ?></div><?php endif; ?>
         <?php if ($error_message): ?><div style="color:#dc3545; margin-bottom:1rem;"><?php echo htmlspecialchars($error_message); ?></div><?php endif; ?>
 
-        <table>
+        <div class="search-container">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="adminSearch" placeholder="Search by ID, username, name, or email..." onkeyup="filterAdmins()">
+            </div>
+        </div>
+        <div class="no-results" id="noAdminResults">No admins found.</div>
+        <table id="adminTable">
             <thead>
                 <tr>
+                    <th>Admin ID</th>
                     <th>Username</th>
                     <th>Name</th>
                     <th>Email</th>
@@ -132,7 +179,11 @@ $admins = $stmt->fetchAll();
             </thead>
             <tbody>
                 <?php foreach ($admins as $a): ?>
-                <tr>
+                <tr data-admin-id="<?php echo (int)$a['admin_id']; ?>"
+                    data-admin-username="<?php echo htmlspecialchars(strtolower($a['username'])); ?>"
+                    data-admin-name="<?php echo htmlspecialchars(strtolower(trim($a['first_name'] . ' ' . $a['last_name']))); ?>"
+                    data-admin-email="<?php echo htmlspecialchars(strtolower($a['email'])); ?>">
+                    <td><?php echo (int)$a['admin_id']; ?></td>
                     <td><?php echo htmlspecialchars($a['username']); ?></td>
                     <td><?php echo htmlspecialchars($a['first_name'] . ' ' . $a['last_name']); ?></td>
                     <td><?php echo htmlspecialchars($a['email']); ?></td>
@@ -250,6 +301,51 @@ $admins = $stmt->fetchAll();
     }
     function closeModal(){ modalBg.style.display = 'none'; }
     modalBg.addEventListener('click', (e)=>{ if(e.target===modalBg) closeModal(); });
+    
+    function filterAdmins() {
+        const input = document.getElementById('adminSearch');
+        const filter = input.value.toLowerCase().trim();
+        const table = document.getElementById('adminTable');
+        const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+        const noResults = document.getElementById('noAdminResults');
+        let found = false;
+
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            const adminId = (row.getAttribute('data-admin-id') || '').toLowerCase();
+            const adminUsername = row.getAttribute('data-admin-username') || '';
+            const adminName = row.getAttribute('data-admin-name') || '';
+            const adminEmail = row.getAttribute('data-admin-email') || '';
+            const idPrefix = `admin${adminId}`;
+            const hashId = `#${adminId}`;
+            const idLabel = `id ${adminId}`;
+            const adminIdLabel = `admin id ${adminId}`;
+
+            const searchText = [
+                adminId,
+                adminUsername,
+                adminName,
+                adminEmail,
+                idPrefix,
+                hashId,
+                idLabel,
+                adminIdLabel
+            ].join(' ');
+
+            if (filter === '' || searchText.includes(filter)) {
+                row.style.display = '';
+                found = true;
+            } else {
+                row.style.display = 'none';
+            }
+        }
+
+        if (found || filter === '') {
+            noResults.classList.remove('show');
+        } else {
+            noResults.classList.add('show');
+        }
+    }
     </script>
 </body>
 </html> 
