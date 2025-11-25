@@ -1,11 +1,9 @@
-@@ -1,547 +1,547 @@
 -- phpMyAdmin SQL Dump
 -- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 03, 2025 at 06:48 PM
--- Generation Time: Nov 04, 2025 at 06:03 AM
+-- Generation Time: Nov 20, 2025 at 06:05 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -47,8 +45,9 @@ CREATE TABLE `admin_user` (
 --
 
 INSERT INTO `admin_user` (`admin_id`, `username`, `email`, `password_hash`, `first_name`, `last_name`, `role`, `is_active`, `created_at`, `updated_at`) VALUES
-(2, 'jason', 'jinsheng122@gmail.com', '$2y$10$AEIJET1Tvy4m5Y8A5ypMHOzFNSe.H7zgYPuo.U.hS2AfUw4tLxHpW', 'kee', 'jin sheng', '', 1, '2025-10-30 20:37:04', '2025-11-03 17:38:42'),
-(3, 'Shaun', 'shaun123@gmail.com', '$2y$10$XNd.3RaVEzaS12M39AMsue.2ISG.fTSchCVoSpXSf8nVL9.QZq6Gm', 'Chua Shen', 'Lin Shaun', 'Staff', 1, '2025-11-03 17:20:25', '2025-11-03 17:20:25');
+(2, 'jason', 'jinsheng122@gmail.com', '$2y$10$AEIJET1Tvy4m5Y8A5ypMHOzFNSe.H7zgYPuo.U.hS2AfUw4tLxHpW', 'kee', 'jin sheng', 'Staff', 1, '2025-10-30 20:37:04', '2025-11-19 06:35:19'),
+(3, 'Shaun', 'shaun123@gmail.com', '$2y$10$XNd.3RaVEzaS12M39AMsue.2ISG.fTSchCVoSpXSf8nVL9.QZq6Gm', 'Chua Shen', 'Lin Shaun', 'Staff', 1, '2025-11-03 17:20:25', '2025-11-03 17:20:25'),
+(4, 'SuperAdmin', 'zee271810@gmail.com', '$2y$10$UlkbY1NUlFlbZgOxO8E.3eCix1cl7nXBul7I1TTQWaODWwY4K8zva', 'Kee', 'Jin Sheng', 'Super Admin', 1, '2025-11-19 06:28:38', '2025-11-19 06:34:04');
 
 -- --------------------------------------------------------
 
@@ -102,7 +101,8 @@ CREATE TABLE `delivery_address` (
 --
 
 INSERT INTO `delivery_address` (`address_id`, `user_id`, `address_line1`, `address_line2`, `city`, `state`, `postal_code`, `country`, `is_default`, `created_at`) VALUES
-(1, 1, '21 Jalan Kejayaan 18', 'Taman Universiti', 'Skudai', 'Johor', '81300', 'Malaysia', 1, '2025-10-30 20:48:17');
+(1, 1, '21 Jalan Kejayaan 18', 'Taman Universiti', 'Skudai', 'Johor', '81300', 'Malaysia', 1, '2025-10-30 20:48:17'),
+(2, 2, '28，jalan nusa bayu', '3/10 Taman nusa bayu', 'gelang patah', 'johor', '79200', 'Malaysia', 1, '2025-11-12 11:59:58');
 
 -- --------------------------------------------------------
 
@@ -136,7 +136,8 @@ INSERT INTO `order` (`order_id`, `user_id`, `address_id`, `order_number`, `order
 (1, 1, 1, 'SF202510306559', 'Delivered', 'Delivery', 14.90, 0.89, 5.00, 20.79, '', '2025-10-30 21:33:17', NULL, '2025-10-30 20:48:17', '2025-10-30 20:52:49'),
 (2, 1, 1, 'SF202510309781', 'Delivered', 'Delivery', 17.80, 1.07, 5.00, 23.87, '', '2025-10-30 22:30:29', NULL, '2025-10-30 21:45:29', '2025-10-30 21:59:00'),
 (3, 1, 1, 'SF202510303825', 'Confirmed', 'Delivery', 32.70, 1.96, 5.00, 39.66, '', '2025-10-30 22:38:34', NULL, '2025-10-30 21:53:34', '2025-10-30 21:57:16'),
-(4, 1, 1, 'SF202510303929', 'Pending', 'Delivery', 21.80, 1.31, 5.00, 28.11, '', '2025-10-30 22:54:30', NULL, '2025-10-30 22:09:30', '2025-10-30 22:09:30');
+(4, 1, 1, 'SF202510303929', 'Pending', 'Delivery', 21.80, 1.31, 5.00, 28.11, '', '2025-10-30 22:54:30', NULL, '2025-10-30 22:09:30', '2025-10-30 22:09:30'),
+(5, 2, 2, 'SF202511124878', 'Delivered', 'Delivery', 37.80, 2.27, 5.00, 45.07, 'tak nak tofu', '2025-11-12 12:51:04', NULL, '2025-11-12 12:06:04', '2025-11-17 17:27:15');
 
 -- --------------------------------------------------------
 
@@ -164,7 +165,7 @@ INSERT INTO `order_item` (`item_id`, `order_id`, `product_id`, `quantity`, `unit
 (2, 2, 4, 2, 8.90, 17.80, NULL, '2025-10-30 21:45:29'),
 (3, 3, 6, 3, 10.90, 32.70, NULL, '2025-10-30 21:53:34'),
 (4, 4, 14, 1, 14.90, 14.90, NULL, '2025-10-30 22:09:30'),
-(5, 4, 7, 1, 6.90, 6.90, NULL, '2025-10-30 22:09:30');
+(6, 5, 3, 2, 18.90, 37.80, NULL, '2025-11-12 12:06:04');
 
 -- --------------------------------------------------------
 
@@ -190,7 +191,8 @@ INSERT INTO `payment` (`payment_id`, `order_id`, `payment_method`, `payment_stat
 (1, 1, 'Cash', 'Completed', 20.79, NULL, '2025-10-30 20:48:17'),
 (2, 2, 'Credit Card', 'Completed', 23.87, NULL, '2025-10-30 21:45:29'),
 (3, 3, 'Credit Card', 'Completed', 39.66, NULL, '2025-10-30 21:53:34'),
-(4, 4, 'Cash', 'Completed', 28.11, NULL, '2025-10-30 22:09:30');
+(4, 4, 'Cash', 'Completed', 28.11, NULL, '2025-10-30 22:09:30'),
+(5, 5, 'Cash', 'Completed', 45.07, NULL, '2025-11-12 12:06:04');
 
 -- --------------------------------------------------------
 
@@ -220,20 +222,20 @@ CREATE TABLE `product` (
 INSERT INTO `product` (`product_id`, `category_id`, `product_name`, `description`, `price`, `image`, `is_available`, `stock_quantity`, `preparation_time`, `is_featured`, `created_at`, `updated_at`) VALUES
 (1, 1, 'Rendang Beef', 'Tender beef cooked in rich coconut milk and spices', 25.90, 'rendang_beef.png', 1, 50, 15, 1, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
 (2, 1, 'Kung Pao Chicken', 'Spicy diced chicken with peanuts and vegetables', 22.90, 'kung_pau_chciken.png', 1, 45, 15, 1, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
-(3, 1, 'Mapo Tofu', 'Spicy tofu with minced meat in Sichuan sauce', 18.90, 'mapo_toufu.png', 1, 40, 15, 0, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
+(3, 1, 'Mapo Tofu', 'Spicy tofu with minced meat in Sichuan sauce', 18.90, 'mapo_toufu.png', 1, 38, 15, 0, '2025-10-28 06:04:20', '2025-11-12 12:06:04'),
 (4, 2, 'Char Siu Bao', 'Steamed BBQ pork buns', 8.90, 'char_siu_bao.png', 1, 30, 15, 1, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
 (5, 2, 'Siew Mai', 'Steamed pork and shrimp dumplings', 12.90, 'siew_mai.png', 1, 35, 15, 0, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
 (6, 2, 'Dumpling', 'Pan-fried dumplings with pork filling', 10.90, 'dumpling.png', 1, 22, 15, 0, '2025-10-28 06:04:20', '2025-10-30 21:53:34'),
-(7, 3, 'Coffee', 'Freshly brewed coffee', 6.90, 'coffee.png', 1, 99, 15, 1, '2025-10-28 06:04:20', '2025-10-30 22:09:30'),
 (8, 3, 'Tea', 'Traditional Chinese tea', 5.90, 'tea.png', 1, 100, 15, 0, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
 (9, 3, 'Lime Juice', 'Refreshing lime juice', 7.90, 'lime_juice.png', 1, 80, 15, 0, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
 (10, 4, 'Taiyaki', 'Fish-shaped waffle with sweet filling', 8.90, 'taiyaki.png', 1, 20, 15, 1, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
 (11, 4, 'Tang Yuan', 'Sweet glutinous rice balls', 9.90, 'tang_yuan.png', 1, 25, 15, 0, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
 (12, 5, 'Nasi Ayam Geprek', 'Crispy chicken with rice and sambal', 16.90, 'nasi_ayam_geprek.png', 1, 40, 15, 1, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
 (13, 5, 'Nasi Campur', 'Mixed rice with various side dishes', 18.90, 'nasi_campur.png', 1, 35, 15, 0, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
-(14, 6, 'Char Kuey Teow', 'Stir-fried flat rice noodles', 14.90, 'char_kuey_teow.png', 1, 29, 15, 1, '2025-10-28 06:04:20', '2025-10-30 22:09:30'),
+(14, 6, 'Char Kuey Teow', 'Stir-fried flat rice noodles', 14.90, 'char_kuey_teow.png', 1, 99, 15, 1, '2025-10-28 06:04:20', '2025-11-12 12:13:44'),
 (15, 6, 'Mie Goreng', 'Indonesian fried noodles', 13.90, 'mie_goreng.png', 1, 30, 15, 0, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
-(16, 7, 'Wantan Soup', 'Clear soup with wonton dumplings', 12.90, 'wantan_soup.png', 1, 25, 15, 0, '2025-10-28 06:04:20', '2025-10-28 06:04:20');
+(16, 7, 'Wantan Soup', 'Clear soup with wonton dumplings', 12.90, 'wantan_soup.png', 1, 25, 15, 0, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
+(17, 2, 'test', 'test', 0.00, 'food_690973d78f0799.82262871.jpeg', 1, 0, 15, 0, '2025-11-04 03:32:39', '2025-11-04 03:33:12');
 
 -- --------------------------------------------------------
 
@@ -291,6 +293,13 @@ CREATE TABLE `shopping_cart` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `shopping_cart`
+--
+
+INSERT INTO `shopping_cart` (`cart_id`, `user_id`, `product_id`, `quantity`, `special_instructions`, `created_at`, `updated_at`) VALUES
+(3, 1, 4, 1, NULL, '2025-11-17 17:09:05', '2025-11-17 17:14:35');
+
 -- --------------------------------------------------------
 
 --
@@ -313,15 +322,18 @@ CREATE TABLE `user` (
   `security_question_id` int(11) DEFAULT NULL,
   `security_answer_hash` varchar(255) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `reset_token` varchar(100) DEFAULT NULL,
+  `token_expiry` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `user`
 --
 
-INSERT INTO `user` (`user_id`, `username`, `email`, `password_hash`, `first_name`, `last_name`, `phone`, `date_of_birth`, `gender`, `profile_image`, `is_active`, `is_verified`, `security_question_id`, `security_answer_hash`, `created_at`, `updated_at`) VALUES
-(1, 'herry', 'jinsheng122@gmail.com', '$2y$10$Aje0zTE.5w0eAlYOeI8Wru6z7qHYJwaIodWQCsfxTdo5pQMEMWgfK', 'herry', 'potter', '0187826588', '2005-06-13', 'Male', 'user.jpg', 1, 0, 1, '$2y$10$h/vsHVGMbHfsfmunlt6jC.Zw1GZb23ZQJPPgrOB0zgUegPxlEPll2', '2025-10-30 20:39:35', '2025-10-30 20:39:35');
+INSERT INTO `user` (`user_id`, `username`, `email`, `password_hash`, `first_name`, `last_name`, `phone`, `date_of_birth`, `gender`, `profile_image`, `is_active`, `is_verified`, `security_question_id`, `security_answer_hash`, `created_at`, `updated_at`, `reset_token`, `token_expiry`) VALUES
+(1, 'herry', 'jinsheng122@gmail.com', '$2y$10$T8y70GVGmMMf6mAwXCbG/OPe9aRyr6Wq0B4UJOsanORYrHCxaBjhq', 'herry', 'potter', '0187826588', '2005-06-13', 'Male', 'user.jpg', 1, 0, 1, '$2y$10$h/vsHVGMbHfsfmunlt6jC.Zw1GZb23ZQJPPgrOB0zgUegPxlEPll2', '2025-10-30 20:39:35', '2025-11-17 17:00:08', NULL, NULL),
+(2, 'Kai Shun', 'Jkee1306@gmail.com', '$2y$10$MPU4XBb471KvtllYY6lgq.UjlEq1pUkI/eF/fO1UEijRfUiQ1xKM6', 'Kevin', 'Kek', '0167099992', '2005-03-04', 'Male', 'user.jpg', 1, 0, NULL, NULL, '2025-11-12 11:54:36', '2025-11-17 17:25:07', NULL, NULL);
 
 --
 -- Indexes for dumped tables
@@ -424,7 +436,7 @@ ALTER TABLE `user`
 -- AUTO_INCREMENT for table `admin_user`
 --
 ALTER TABLE `admin_user`
-  MODIFY `admin_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `admin_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `category`
@@ -436,31 +448,31 @@ ALTER TABLE `category`
 -- AUTO_INCREMENT for table `delivery_address`
 --
 ALTER TABLE `delivery_address`
-  MODIFY `address_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `address_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `order`
 --
 ALTER TABLE `order`
-  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `order_item`
 --
 ALTER TABLE `order_item`
-  MODIFY `item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `payment`
 --
 ALTER TABLE `payment`
-  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `product`
 --
 ALTER TABLE `product`
-  MODIFY `product_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `product_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 
 --
 -- AUTO_INCREMENT for table `review`
@@ -478,13 +490,13 @@ ALTER TABLE `security_questions`
 -- AUTO_INCREMENT for table `shopping_cart`
 --
 ALTER TABLE `shopping_cart`
-  MODIFY `cart_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `cart_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `user`
 --
 ALTER TABLE `user`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- Constraints for dumped tables

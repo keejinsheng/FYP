@@ -583,9 +583,6 @@ $today_revenue = $stmt->fetchColumn() ?: 0;
             </div>
             <div class="admin-info">
                 <span class="admin-name">Welcome, <?php echo htmlspecialchars($_SESSION['admin_first_name'] . ' ' . $_SESSION['admin_last_name']); ?></span>
-                <?php if ($isSuperAdmin): ?>
-                <a href="../staff/staff.php" class="logout-btn" style="background:#6a1b9a;">Manage Admins</a>
-                <?php endif; ?>
                 <a href="../auth/logout.php" class="logout-btn">Logout</a>
             </div>
         </div>
@@ -689,7 +686,7 @@ $today_revenue = $stmt->fetchColumn() ?: 0;
 
                 <a href="../orders/order.php" class="action-btn">
                     <i class="fas fa-shopping-cart"></i>
-                    Manage Orders
+                    View Orders
                 </a>
 
                 <a href="../products/product.php" class="action-btn">
