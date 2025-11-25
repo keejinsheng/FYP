@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 20, 2025 at 06:05 AM
+-- Generation Time: Nov 25, 2025 at 06:26 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -37,17 +37,19 @@ CREATE TABLE `admin_user` (
   `role` enum('Super Admin','Manager','Staff') DEFAULT 'Staff',
   `is_active` tinyint(1) DEFAULT 1,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `reset_token` varchar(100) DEFAULT NULL,
+  `token_expiry` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `admin_user`
 --
 
-INSERT INTO `admin_user` (`admin_id`, `username`, `email`, `password_hash`, `first_name`, `last_name`, `role`, `is_active`, `created_at`, `updated_at`) VALUES
-(2, 'jason', 'jinsheng122@gmail.com', '$2y$10$AEIJET1Tvy4m5Y8A5ypMHOzFNSe.H7zgYPuo.U.hS2AfUw4tLxHpW', 'kee', 'jin sheng', 'Staff', 1, '2025-10-30 20:37:04', '2025-11-19 06:35:19'),
-(3, 'Shaun', 'shaun123@gmail.com', '$2y$10$XNd.3RaVEzaS12M39AMsue.2ISG.fTSchCVoSpXSf8nVL9.QZq6Gm', 'Chua Shen', 'Lin Shaun', 'Staff', 1, '2025-11-03 17:20:25', '2025-11-03 17:20:25'),
-(4, 'SuperAdmin', 'zee271810@gmail.com', '$2y$10$UlkbY1NUlFlbZgOxO8E.3eCix1cl7nXBul7I1TTQWaODWwY4K8zva', 'Kee', 'Jin Sheng', 'Super Admin', 1, '2025-11-19 06:28:38', '2025-11-19 06:34:04');
+INSERT INTO `admin_user` (`admin_id`, `username`, `email`, `password_hash`, `first_name`, `last_name`, `role`, `is_active`, `created_at`, `updated_at`, `reset_token`, `token_expiry`) VALUES
+(1, 'jason', 'jinsheng122@gmail.com', '$2y$10$0D44h5/cM/ft4IG0YfDlP.MNN2UKGV2W7qGhsz2felc3CUyF0aOkO', 'kee', 'jin sheng', 'Staff', 1, '2025-10-30 20:37:04', '2025-11-25 17:24:40', NULL, NULL),
+(2, 'Shaun', 'shaun123@gmail.com', '$2y$10$XNd.3RaVEzaS12M39AMsue.2ISG.fTSchCVoSpXSf8nVL9.QZq6Gm', 'Chua Shen', 'Lin Shaun', 'Staff', 1, '2025-11-03 17:20:25', '2025-11-25 17:24:59', NULL, NULL),
+(3, 'SuperAdmin', 'zee271810@gmail.com', '$2y$10$UlkbY1NUlFlbZgOxO8E.3eCix1cl7nXBul7I1TTQWaODWwY4K8zva', 'Kee', 'Jin Sheng', 'Super Admin', 1, '2025-11-19 06:28:38', '2025-11-25 17:25:03', NULL, NULL);
 
 -- --------------------------------------------------------
 
