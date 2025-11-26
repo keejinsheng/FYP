@@ -38,6 +38,10 @@ if (($_POST['captcha_verified'] ?? '0') !== '1') {
 
     elseif (strlen($password) < 6) {
         $error_message = 'Password must be at least 6 characters long';
+    } elseif (!preg_match('/[a-zA-Z]/', $password)) {
+        $error_message = 'Password must contain at least one letter';
+    } elseif (!preg_match('/[0-9]/', $password)) {
+        $error_message = 'Password must contain at least one number';
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error_message = 'Please enter a valid email address';
     } else {
@@ -203,6 +207,80 @@ if (($_POST['captcha_verified'] ?? '0') !== '1') {
         .form-group select:focus {
             outline: none;
             border-color: var(--primary-color);
+        }
+
+        /* ====== Password Strength Indicator ====== */
+        .password-strength-container {
+            margin-top: 0.5rem;
+        }
+
+        .password-strength-bar {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 0.5rem;
+        }
+
+        .password-strength-segment {
+            flex: 1;
+            height: 4px;
+            background: var(--text-gray);
+            border-radius: 2px;
+            transition: var(--transition);
+        }
+
+        .password-strength-segment.weak {
+            background: #ff4444;
+        }
+
+        .password-strength-segment.medium {
+            background: #ffaa00;
+        }
+
+        .password-strength-segment.strong {
+            background: #4CAF50;
+        }
+
+        .password-strength-text {
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .password-strength-text.weak {
+            color: #ff4444;
+        }
+
+        .password-strength-text.medium {
+            color: #ffaa00;
+        }
+
+        .password-strength-text.strong {
+            color: #4CAF50;
+        }
+
+        .password-strength-text.empty {
+            color: var(--text-gray);
+        }
+
+        .password-requirements {
+            font-size: 0.75rem;
+            color: var(--text-gray);
+            margin-top: 0.25rem;
+        }
+
+        .password-requirements .requirement {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.25rem;
+        }
+
+        .password-requirements .requirement.valid {
+            color: #4CAF50;
+        }
+
+        .password-requirements .requirement.invalid {
+            color: var(--text-gray);
         }
 
         .register-btn {
@@ -477,6 +555,29 @@ if (($_POST['captcha_verified'] ?? '0') !== '1') {
                     <div class="form-group">
                         <label for="password">Password *</label>
                         <input type="password" id="password" name="password" required>
+                        <div class="password-strength-container">
+                            <div class="password-strength-bar">
+                                <div class="password-strength-segment" id="strength-seg-1"></div>
+                                <div class="password-strength-segment" id="strength-seg-2"></div>
+                                <div class="password-strength-segment" id="strength-seg-3"></div>
+                                <div class="password-strength-segment" id="strength-seg-4"></div>
+                            </div>
+                            <div class="password-strength-text empty" id="strength-text"></div>
+                            <div class="password-requirements">
+                                <div class="requirement invalid" id="req-length">
+                                    <span>✓</span>
+                                    <span>At least 6 characters</span>
+                                </div>
+                                <div class="requirement invalid" id="req-letter">
+                                    <span>✓</span>
+                                    <span>Contains at least one letter</span>
+                                </div>
+                                <div class="requirement invalid" id="req-number">
+                                    <span>✓</span>
+                                    <span>Contains at least one number</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="form-group">
@@ -510,7 +611,7 @@ if (($_POST['captcha_verified'] ?? '0') !== '1') {
                 <!-- ====== Slider Captcha START ====== -->
                 <div class="form-group full-width">
                     <label>Verify you are human *</label>
-                    
+
                     <div id="captchaBox" class="captcha-container">
                         <p id="captchaMsg" class="captcha-message">Slide to complete the puzzle</p>
 
@@ -521,23 +622,23 @@ if (($_POST['captcha_verified'] ?? '0') !== '1') {
 
                             <img id="bgImg" class="captcha-bg" alt="Captcha Background">
                             <img id="blockImg" class="captcha-block" alt="Captcha Block">
-                        </div>
+            </div>
 
                         <div class="slider-container">
                             <input type="range" id="slider" class="captcha-slider" min="0" max="250" value="0">
-                        </div>
+        </div>
 
                         <div id="captchaFooter" class="captcha-footer">
                             <div id="attemptsInfo" class="attempts-info">
                                 Attempts left: <span id="attemptsLeft">—</span>
                             </div>
                             <button type="button" id="reloadCaptcha" class="reload-btn">Reload</button>
-                        </div>
-                    </div>
+        </div>
+    </div>
 
-                    <input type="hidden" id="captcha_verified" name="captcha_verified" value="0">
-                    <input type="hidden" id="captcha_token" name="captcha_token" value="">
-                </div>
+    <input type="hidden" id="captcha_verified" name="captcha_verified" value="0">
+    <input type="hidden" id="captcha_token" name="captcha_token" value="">
+</div>
                 <!-- ====== Slider Captcha END ====== -->
 
 
@@ -550,31 +651,31 @@ if (($_POST['captcha_verified'] ?? '0') !== '1') {
         </div>
     </div>
 
-    <script>
-    (() => {
-        const slider = document.getElementById('slider');
-        const blockImg = document.getElementById('blockImg');
-        const bgImg = document.getElementById('bgImg');
-        const loading = document.getElementById('captchaLoading');
-        const captchaBox = document.getElementById('captchaBox');
-        const captchaMsg = document.getElementById('captchaMsg');
-        const attemptsLeftEl = document.getElementById('attemptsLeft');
-        const reloadBtn = document.getElementById('reloadCaptcha');
-        const verifiedInput = document.getElementById('captcha_verified');
-        const tokenInput = document.getElementById('captcha_token');
+<script>
+(() => {
+    const slider = document.getElementById('slider');
+    const blockImg = document.getElementById('blockImg');
+    const bgImg = document.getElementById('bgImg');
+    const loading = document.getElementById('captchaLoading');
+    const captchaBox = document.getElementById('captchaBox');
+    const captchaMsg = document.getElementById('captchaMsg');
+    const attemptsLeftEl = document.getElementById('attemptsLeft');
+    const reloadBtn = document.getElementById('reloadCaptcha');
+    const verifiedInput = document.getElementById('captcha_verified');
+    const tokenInput = document.getElementById('captcha_token');
 
-        let currentToken = null;
+    let currentToken = null;
         let currentMax = 250;
         let currentScaleX = 1; // 保存当前的缩放比例
 
-        function setLoading(show) {
-            loading.style.display = show ? 'block' : 'none';
-        }
+    function setLoading(show) {
+        loading.style.display = show ? 'block' : 'none';
+    }
 
-        function loadCaptcha() {
-            setLoading(true);
+    function loadCaptcha() {
+        setLoading(true);
             captchaBox.classList.remove('captcha-fail', 'captcha-success');
-            captchaMsg.textContent = 'Loading puzzle...';
+        captchaMsg.textContent = 'Loading puzzle...';
 
             // 添加时间戳和随机数防止缓存，确保每次获取新图片
             const timestamp = new Date().getTime();
@@ -587,13 +688,13 @@ if (($_POST['captcha_verified'] ?? '0') !== '1') {
                     'Pragma': 'no-cache'
                 }
             })
-                .then(r => r.json())
-                .then(data => {
+            .then(r => r.json())
+            .then(data => {
                     if (data.error) {
-                        setLoading(false);
-                        captchaMsg.textContent = 'Error: ' + data.error;
-                        return;
-                    }
+                setLoading(false);
+                    captchaMsg.textContent = 'Error: ' + data.error;
+                    return;
+                }
 
                     currentToken = data.token;
                     tokenInput.value = currentToken;
@@ -602,8 +703,8 @@ if (($_POST['captcha_verified'] ?? '0') !== '1') {
                     bgImg.onload = null;
                     
                     // 设置图片源
-                    bgImg.src = data.bg;
-                    blockImg.src = data.block;
+                bgImg.src = data.bg;
+                blockImg.src = data.block;
 
                     // 等待图片加载完成后再计算位置
                     const setupCaptcha = function() {
@@ -640,9 +741,9 @@ if (($_POST['captcha_verified'] ?? '0') !== '1') {
                         
                         // 设置滑块范围（基于缩放后的宽度）
                         currentMax = Math.max(80, Math.floor(visibleWidth - scaledBlockSize));
-                        slider.max = currentMax;
-                        slider.value = 0;
-                        blockImg.style.left = '0px';
+                    slider.max = currentMax;
+                    slider.value = 0;
+                    blockImg.style.left = '0px';
                         // 只有在没有尝试过的情况下才显示初始次数（新token时）
                         if (!attemptsLeftEl.dataset.hasAttempted && !currentToken) {
                             attemptsLeftEl.textContent = '3';
@@ -652,7 +753,7 @@ if (($_POST['captcha_verified'] ?? '0') !== '1') {
                             attemptsLeftEl.textContent = '3';
                         }
                         captchaMsg.textContent = 'Slide to complete the puzzle';
-                        verifiedInput.value = '0';
+                    verifiedInput.value = '0';
                     };
                     
                     // 等待背景图片加载完成
@@ -667,21 +768,21 @@ if (($_POST['captcha_verified'] ?? '0') !== '1') {
                             captchaMsg.textContent = 'Failed to load image';
                         };
                     }
-                })
-                .catch(err => {
-                    setLoading(false);
+            })
+            .catch(err => {
+                setLoading(false);
                     captchaMsg.textContent = 'Failed to load puzzle. Please try again.';
-                    console.error(err);
-                });
-        }
+                console.error(err);
+            });
+    }
 
-        function showFail(remainingAttempts) {
-            captchaBox.classList.remove('captcha-success');
-            captchaBox.classList.add('captcha-fail');
-            captchaMsg.textContent = 'Verification failed. Try again.';
+    function showFail(remainingAttempts) {
+        captchaBox.classList.remove('captcha-success');
+        captchaBox.classList.add('captcha-fail');
+        captchaMsg.textContent = 'Verification failed. Try again.';
             // 确保显示剩余尝试次数
             if (remainingAttempts !== undefined && remainingAttempts !== '—' && remainingAttempts !== null) {
-                attemptsLeftEl.textContent = remainingAttempts;
+        attemptsLeftEl.textContent = remainingAttempts;
                 attemptsLeftEl.dataset.hasAttempted = 'true';
             } else {
                 attemptsLeftEl.textContent = '—';
@@ -726,7 +827,7 @@ if (($_POST['captcha_verified'] ?? '0') !== '1') {
                         captchaMsg.textContent = 'Slide to complete the puzzle';
                         
                         // 重新计算位置
-                        setTimeout(() => {
+        setTimeout(() => {
                             const visibleWidth = bgImg.clientWidth || data.width || 300;
                             const visibleHeight = bgImg.clientHeight || data.height || 200;
                             const originalWidth = data.width;
@@ -758,43 +859,43 @@ if (($_POST['captcha_verified'] ?? '0') !== '1') {
                     });
                 } else {
                     // 如果没有旧token，正常重新加载
-                    loadCaptcha();
+            loadCaptcha();
                 }
-            }, 900);
-        }
+        }, 900);
+    }
 
-        function showLocked(seconds) {
-            captchaBox.classList.remove('captcha-success');
-            captchaBox.classList.add('captcha-fail');
+    function showLocked(seconds) {
+        captchaBox.classList.remove('captcha-success');
+        captchaBox.classList.add('captcha-fail');
             attemptsLeftEl.textContent = '0';
             attemptsLeftEl.dataset.hasAttempted = 'true';
-            let s = seconds;
-            function tick() {
-                if (s <= 0) {
+        let s = seconds;
+        function tick() {
+            if (s <= 0) {
                     // 锁定时间到，重新加载新的验证码
                     currentToken = null;
                     attemptsLeftEl.dataset.hasAttempted = '';
-                    loadCaptcha();
-                    return;
-                }
-                captchaMsg.textContent = 'Too many attempts. Locked for ' + s + 's';
-                s--;
-                setTimeout(tick, 1000);
-            }
-            tick();
-        }
-
-        slider.addEventListener('input', function() {
-            blockImg.style.left = this.value + 'px';
-        });
-
-        slider.addEventListener('change', function() {
-            const sliderValue = parseInt(this.value, 10);
-            if (!currentToken) {
-                captchaMsg.textContent = 'Token missing. Reloading...';
                 loadCaptcha();
                 return;
             }
+            captchaMsg.textContent = 'Too many attempts. Locked for ' + s + 's';
+            s--;
+            setTimeout(tick, 1000);
+        }
+        tick();
+    }
+
+    slider.addEventListener('input', function() {
+        blockImg.style.left = this.value + 'px';
+    });
+
+    slider.addEventListener('change', function() {
+            const sliderValue = parseInt(this.value, 10);
+        if (!currentToken) {
+                captchaMsg.textContent = 'Token missing. Reloading...';
+            loadCaptcha();
+            return;
+        }
             
             // 将滑块值（缩放后的坐标）转换为原始图片坐标
             // 因为后端验证使用的是原始图片的坐标
@@ -803,28 +904,28 @@ if (($_POST['captcha_verified'] ?? '0') !== '1') {
             }
             const userX = Math.round(sliderValue / currentScaleX);
             
-            captchaMsg.textContent = 'Verifying...';
-            setLoading(true);
+        captchaMsg.textContent = 'Verifying...';
+        setLoading(true);
 
-            fetch('verify.php', {
-                method: 'POST',
+        fetch('verify.php', {
+            method: 'POST',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                body: `token=${encodeURIComponent(currentToken)}&userX=${encodeURIComponent(userX)}`
-            })
-            .then(r => r.json())
-            .then(data => {
-                setLoading(false);
-                if (!data) {
-                    captchaMsg.textContent = 'Server error';
-                    return;
-                }
-                if (data.status === 'success') {
-                    captchaBox.classList.remove('captcha-fail');
-                    captchaBox.classList.add('captcha-success');
-                    captchaMsg.textContent = '✔ Verification success';
-                    attemptsLeftEl.textContent = 'OK';
-                    verifiedInput.value = '1';
-                } else if (data.status === 'fail') {
+            body: `token=${encodeURIComponent(currentToken)}&userX=${encodeURIComponent(userX)}`
+        })
+        .then(r => r.json())
+        .then(data => {
+            setLoading(false);
+            if (!data) {
+                captchaMsg.textContent = 'Server error';
+                return;
+            }
+            if (data.status === 'success') {
+                captchaBox.classList.remove('captcha-fail');
+                captchaBox.classList.add('captcha-success');
+                captchaMsg.textContent = '✔ Verification success';
+                attemptsLeftEl.textContent = 'OK';
+                verifiedInput.value = '1';
+            } else if (data.status === 'fail') {
                     // 显示剩余尝试次数
                     const remaining = data.remaining_attempts;
                     console.log('Verification failed. Remaining attempts:', remaining, 'Attempts:', data.attempts);
@@ -834,33 +935,157 @@ if (($_POST['captcha_verified'] ?? '0') !== '1') {
                     } else {
                         showFail('—');
                     }
-                } else if (data.status === 'locked') {
+            } else if (data.status === 'locked') {
                     // 锁定状态，显示0次并开始倒计时
                     console.log('Account locked. Remaining seconds:', data.remaining_seconds);
                     attemptsLeftEl.textContent = '0';
-                    showLocked(data.remaining_seconds ?? 0);
-                } else if (data.status === 'expired' || data.reason === 'expired') {
-                    captchaMsg.textContent = 'Token expired. Reloading...';
-                    setTimeout(loadCaptcha, 800);
-                } else if (data.reason === 'invalid_token') {
-                    captchaMsg.textContent = 'Invalid token. Reloading...';
-                    setTimeout(loadCaptcha, 800);
-                } else {
+                showLocked(data.remaining_seconds ?? 0);
+            } else if (data.status === 'expired' || data.reason === 'expired') {
+                captchaMsg.textContent = 'Token expired. Reloading...';
+                setTimeout(loadCaptcha, 800);
+            } else if (data.reason === 'invalid_token') {
+                captchaMsg.textContent = 'Invalid token. Reloading...';
+                setTimeout(loadCaptcha, 800);
+            } else {
                     captchaMsg.textContent = 'Verification error';
-                    console.log(data);
+                console.log(data);
+            }
+        })
+        .catch(err => {
+            setLoading(false);
+            captchaMsg.textContent = 'Network error';
+            console.error(err);
+        });
+    });
+
+    reloadBtn.addEventListener('click', loadCaptcha);
+    loadCaptcha();
+})();
+
+    // ====== Password Strength Indicator ======
+    (function() {
+        const passwordInput = document.getElementById('password');
+        const strengthSegments = [
+            document.getElementById('strength-seg-1'),
+            document.getElementById('strength-seg-2'),
+            document.getElementById('strength-seg-3'),
+            document.getElementById('strength-seg-4')
+        ];
+        const strengthText = document.getElementById('strength-text');
+        const reqLength = document.getElementById('req-length');
+        const reqLetter = document.getElementById('req-letter');
+        const reqNumber = document.getElementById('req-number');
+
+        function checkPasswordStrength(password) {
+            let strength = 0;
+            let strengthLevel = 'empty';
+            let strengthLabel = '';
+
+            // 检查各项要求
+            const hasLength = password.length >= 6;
+            const hasLetter = /[a-zA-Z]/.test(password);
+            const hasNumber = /[0-9]/.test(password);
+
+            // 更新要求指示器
+            if (hasLength) {
+                reqLength.classList.remove('invalid');
+                reqLength.classList.add('valid');
+            } else {
+                reqLength.classList.remove('valid');
+                reqLength.classList.add('invalid');
+            }
+
+            if (hasLetter) {
+                reqLetter.classList.remove('invalid');
+                reqLetter.classList.add('valid');
+            } else {
+                reqLetter.classList.remove('valid');
+                reqLetter.classList.add('invalid');
+            }
+
+            if (hasNumber) {
+                reqNumber.classList.remove('invalid');
+                reqNumber.classList.add('valid');
+            } else {
+                reqNumber.classList.remove('valid');
+                reqNumber.classList.add('invalid');
+            }
+
+            if (password.length === 0) {
+                strengthLevel = 'empty';
+                strengthLabel = '';
+            } else {
+                // 长度检查
+                if (password.length >= 8) {
+                    strength += 1;
+                } else if (password.length >= 6) {
+                    strength += 0.5;
+}
+
+                // 包含小写字母
+                if (/[a-z]/.test(password)) {
+                    strength += 1;
                 }
-            })
-            .catch(err => {
-                setLoading(false);
-                captchaMsg.textContent = 'Network error';
-                console.error(err);
+
+                // 包含大写字母
+                if (/[A-Z]/.test(password)) {
+                    strength += 1;
+                }
+
+                // 包含数字
+                if (/[0-9]/.test(password)) {
+                    strength += 1;
+                }
+
+                // 包含特殊字符
+                if (/[^a-zA-Z0-9]/.test(password)) {
+                    strength += 1;
+                }
+
+                // 确定强度等级
+                if (strength <= 2) {
+                    strengthLevel = 'weak';
+                    strengthLabel = 'weak';
+                } else if (strength <= 3.5) {
+                    strengthLevel = 'medium';
+                    strengthLabel = 'medium';
+                } else {
+                    strengthLevel = 'strong';
+                    strengthLabel = 'strong';
+                }
+            }
+
+            // 更新强度条
+            strengthSegments.forEach((seg, index) => {
+                seg.classList.remove('weak', 'medium', 'strong');
+                if (strengthLevel === 'empty') {
+                    // 不显示任何颜色
+                } else if (strengthLevel === 'weak') {
+                    if (index === 0) {
+                        seg.classList.add('weak');
+                    }
+                } else if (strengthLevel === 'medium') {
+                    if (index <= 1) {
+                        seg.classList.add('medium');
+                    }
+                } else if (strengthLevel === 'strong') {
+                    seg.classList.add('strong');
+                }
             });
+
+            // 更新文字
+            strengthText.textContent = strengthLabel;
+            strengthText.className = 'password-strength-text ' + strengthLevel;
+        }
+
+        passwordInput.addEventListener('input', function() {
+            checkPasswordStrength(this.value);
         });
 
-        reloadBtn.addEventListener('click', loadCaptcha);
-        loadCaptcha();
+        // 初始化
+        checkPasswordStrength(passwordInput.value);
     })();
-    </script>
+</script>
 
 </body>
 </html> 
