@@ -494,7 +494,12 @@ $orders = $stmt->fetchAll();
                     <?php foreach ($orders as $order): ?>
                     <tr data-order-id="<?php echo (int)$order['order_id']; ?>" 
                         data-order-number="<?php echo htmlspecialchars(strtolower($order['order_number'])); ?>" 
+<<<<<<< HEAD
                         data-customer-name="<?php echo htmlspecialchars(strtolower($order['first_name'] . ' ' . $order['last_name'])); ?>">
+=======
+                        data-customer-name="<?php echo htmlspecialchars(strtolower($order['first_name'] . ' ' . $order['last_name'])); ?>"
+                        data-order-email="<?php echo htmlspecialchars(strtolower($order['email'])); ?>">
+>>>>>>> 87bb9f5a715f60b5edf6c1d0248fdfae70cfa335
                             <td><?php echo (int)$order['order_id']; ?></td>
                             <td><?php echo htmlspecialchars($order['order_number']); ?></td>
                             <td><?php echo htmlspecialchars($order['first_name'] . ' ' . $order['last_name']); ?><br><span style="color: var(--text-gray); font-size: 0.9em;">(<?php echo htmlspecialchars($order['email']); ?>)</span></td>
@@ -745,7 +750,11 @@ $orders = $stmt->fetchAll();
         // Search functionality
         function filterOrders() {
             const input = document.getElementById('orderSearch');
+<<<<<<< HEAD
             const filter = input.value.toLowerCase();
+=======
+            const filter = input.value.toLowerCase().trim();
+>>>>>>> 87bb9f5a715f60b5edf6c1d0248fdfae70cfa335
             const table = document.getElementById('ordersTable');
             const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
             const noResults = document.getElementById('noResults');
@@ -753,11 +762,37 @@ $orders = $stmt->fetchAll();
 
             for (let i = 0; i < rows.length; i++) {
                 const row = rows[i];
+<<<<<<< HEAD
                 const orderId = row.getAttribute('data-order-id') || '';
                 const orderNumber = row.getAttribute('data-order-number') || '';
                 const customerName = row.getAttribute('data-customer-name') || '';
                 
                 const searchText = orderId + ' ' + orderNumber + ' ' + customerName;
+=======
+                const orderId = (row.getAttribute('data-order-id') || '').toLowerCase();
+                const orderNumber = row.getAttribute('data-order-number') || '';
+                const customerName = row.getAttribute('data-customer-name') || '';
+                const orderEmail = row.getAttribute('data-order-email') || '';
+                const orderIdText = `order${orderId}`;
+                const hashIdText = `#${orderId}`;
+                const orderIdWithSpace = `order ${orderId}`;
+                const orderIdLabel = `order id ${orderId}`;
+                const plainIdLabel = `id ${orderId}`;
+                const idCompact = `id${orderId}`;
+                
+                const searchText = [
+                    orderId,
+                    orderNumber,
+                    customerName,
+                    orderEmail,
+                    orderIdText,
+                    hashIdText,
+                    orderIdWithSpace,
+                    orderIdLabel,
+                    plainIdLabel,
+                    idCompact
+                ].join(' ');
+>>>>>>> 87bb9f5a715f60b5edf6c1d0248fdfae70cfa335
                 
                 if (searchText.includes(filter)) {
                     row.style.display = '';

@@ -455,7 +455,12 @@ $customers = $stmt->fetchAll();
                 <tbody>
                     <?php foreach ($customers as $c): ?>
                         <tr data-customer-id="<?php echo (int)$c['user_id']; ?>" 
+<<<<<<< HEAD
                             data-customer-name="<?php echo htmlspecialchars(strtolower($c['first_name'] . ' ' . $c['last_name'])); ?>">
+=======
+                            data-customer-name="<?php echo htmlspecialchars(strtolower($c['first_name'] . ' ' . $c['last_name'])); ?>"
+                            data-customer-email="<?php echo htmlspecialchars(strtolower($c['email'])); ?>">
+>>>>>>> 87bb9f5a715f60b5edf6c1d0248fdfae70cfa335
                             <td><?php echo (int)$c['user_id']; ?></td>
                             <td><?php echo htmlspecialchars($c['first_name'] . ' ' . $c['last_name']); ?></td>
                             <td><?php echo htmlspecialchars($c['email']); ?></td>
@@ -724,7 +729,11 @@ $customers = $stmt->fetchAll();
         // Search functionality
         function filterCustomers() {
             const input = document.getElementById('customerSearch');
+<<<<<<< HEAD
             const filter = input.value.toLowerCase();
+=======
+            const filter = input.value.toLowerCase().trim();
+>>>>>>> 87bb9f5a715f60b5edf6c1d0248fdfae70cfa335
             const table = document.getElementById('customersTable');
             const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
             const noResults = document.getElementById('noResults');
@@ -732,10 +741,34 @@ $customers = $stmt->fetchAll();
 
             for (let i = 0; i < rows.length; i++) {
                 const row = rows[i];
+<<<<<<< HEAD
                 const customerId = row.getAttribute('data-customer-id') || '';
                 const customerName = row.getAttribute('data-customer-name') || '';
                 
                 const searchText = customerId + ' ' + customerName;
+=======
+                const customerId = (row.getAttribute('data-customer-id') || '').toLowerCase();
+                const customerName = row.getAttribute('data-customer-name') || '';
+                const customerEmail = row.getAttribute('data-customer-email') || '';
+                const prefixedId = `customer${customerId}`;
+                const hashId = `#${customerId}`;
+                const customerIdWithSpace = `customer ${customerId}`;
+                const customerIdLabel = `customer id ${customerId}`;
+                const idLabel = `id ${customerId}`;
+                const idCompact = `id${customerId}`;
+                
+                const searchText = [
+                    customerId,
+                    customerName,
+                    customerEmail,
+                    prefixedId,
+                    hashId,
+                    customerIdWithSpace,
+                    customerIdLabel,
+                    idLabel,
+                    idCompact
+                ].join(' ');
+>>>>>>> 87bb9f5a715f60b5edf6c1d0248fdfae70cfa335
                 
                 if (searchText.includes(filter)) {
                     row.style.display = '';

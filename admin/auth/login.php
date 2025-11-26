@@ -146,6 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             gap: 0.5rem;
             color: var(--text-gray);
         }
+<<<<<<< HEAD
         .forgot-password {
             color: var(--primary-color);
             text-decoration: none;
@@ -153,6 +154,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             cursor: pointer;
         }
         .forgot-password:hover {
+=======
+        .forgot-link a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        .forgot-link a:hover {
+>>>>>>> 87bb9f5a715f60b5edf6c1d0248fdfae70cfa335
             text-decoration: underline;
         }
         .login-btn {
@@ -170,6 +179,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             transform: translateY(-2px);
             box-shadow: var(--shadow-strong);
         }
+<<<<<<< HEAD
         .register-link {
             text-align: center;
             margin-top: 1.5rem;
@@ -183,6 +193,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .register-link a:hover {
             text-decoration: underline;
         }
+=======
+>>>>>>> 87bb9f5a715f60b5edf6c1d0248fdfae70cfa335
     </style>
 </head>
 <body>
@@ -225,14 +237,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input type="checkbox" name="remember" value="1">
                         Remember me
                     </label>
+<<<<<<< HEAD
+=======
+                    <span class="forgot-link">
+                        <a href="forgot_password.php">Forgot Password?</a>
+                    </span>
+>>>>>>> 87bb9f5a715f60b5edf6c1d0248fdfae70cfa335
                 </div>
 
                 <button type="submit" class="login-btn">Sign In</button>
             </form>
 
+<<<<<<< HEAD
             <div class="register-link">
                 Don't have an admin account? <a href="register.php">Register here</a>
             </div>
+=======
+>>>>>>> 87bb9f5a715f60b5edf6c1d0248fdfae70cfa335
         </div>
     </div>
 
