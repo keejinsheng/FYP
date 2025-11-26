@@ -7,7 +7,8 @@ header("Cache-Control: no-cache, no-store, must-revalidate");
 header("Pragma: no-cache");
 header("Expires: 0");
 
-// 配置
+// 配置.
+
 $BLOCK_SIZE = 50;
 $MIN_WIDTH = 140;
 $MIN_HEIGHT = 100;
