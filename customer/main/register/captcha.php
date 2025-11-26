@@ -36,7 +36,7 @@ $blockSize = 50;
 $x = rand(60, $width - 80);
 $y = rand(20, $height - 80);
 
-// 拼图块
+// 拼图块.
 $block = imagecreatetruecolor($blockSize, $blockSize);
 imagecopy($block, $im, 0, 0, $x, $y, $blockSize, $blockSize);
 
