@@ -328,7 +328,7 @@ $addresses = $stmt->fetchAll();
         <div class="form-group">
             <label for="current_password">Current Password</label>
             <input type="password" id="current_password" name="current_password" required>
-            <div id="currentPasswordMatchMessage" class="password-match-message" style="display: none; margin-top: 0.5rem; font-size: 0.9rem;"></div>
+            <div id="currentPasswordMatchMessage" class="password-match-message" style="display: none; margin-top: 0.5rem; font-size: 0.9rem; padding: 0.5rem 0.75rem; border-radius: 8px; background-color: rgba(255, 255, 255, 0.8);"></div>
         </div>
         <div class="form-group">
             <label for="new_password">New Password</label>
@@ -360,7 +360,7 @@ $addresses = $stmt->fetchAll();
         <div class="form-group">
             <label for="confirm_password">Confirm New Password</label>
             <input type="password" id="confirm_password" name="confirm_password" required minlength="6">
-            <div id="passwordMatchMessage" class="password-match-message" style="display: none; margin-top: 0.5rem; font-size: 0.9rem;"></div>
+            <div id="passwordMatchMessage" class="password-match-message" style="display: none; margin-top: 0.5rem; font-size: 0.9rem; padding: 0.5rem 0.75rem; border-radius: 8px; background-color: rgba(255, 255, 255, 0.8);"></div>
         </div>
         <button type="submit" class="submit-btn" style="background-color: #28a745;">Change Password</button>
     </form>
@@ -711,35 +711,62 @@ function checkPasswordMatch() {
     const confirmPassword = document.getElementById('confirm_password').value;
     const messageDiv = document.getElementById('passwordMatchMessage');
     const confirmInput = document.getElementById('confirm_password');
+    const newPasswordInput = document.getElementById('new_password');
     
+    // 如果确认密码为空，隐藏消息
     if (confirmPassword.length === 0) {
         messageDiv.style.display = 'none';
         confirmInput.style.borderColor = '#ccc';
+        newPasswordInput.style.borderColor = '#ccc';
         return;
     }
     
+    // 如果新密码为空，隐藏消息
     if (newPassword.length === 0) {
         messageDiv.style.display = 'none';
         confirmInput.style.borderColor = '#ccc';
+        newPasswordInput.style.borderColor = '#ccc';
         return;
     }
     
+    // 显示消息
     messageDiv.style.display = 'block';
     
     if (newPassword === confirmPassword) {
         messageDiv.textContent = '✓ Passwords match';
         messageDiv.className = 'password-match-message password-match-success';
         confirmInput.style.borderColor = '#28a745';
+        confirmInput.style.boxShadow = '0 0 0 3px rgba(40, 167, 69, 0.1)';
+        newPasswordInput.style.borderColor = '#28a745';
+        newPasswordInput.style.boxShadow = '0 0 0 3px rgba(40, 167, 69, 0.1)';
     } else {
         messageDiv.textContent = '✗ Passwords do not match';
         messageDiv.className = 'password-match-message password-match-error';
         confirmInput.style.borderColor = '#dc3545';
+        confirmInput.style.boxShadow = '0 0 0 3px rgba(220, 53, 69, 0.1)';
+        newPasswordInput.style.borderColor = '#dc3545';
+        newPasswordInput.style.boxShadow = '0 0 0 3px rgba(220, 53, 69, 0.1)';
     }
 }
 
 // 监听新密码和确认密码输入
-document.getElementById('new_password')?.addEventListener('input', checkPasswordMatch);
-document.getElementById('confirm_password')?.addEventListener('input', checkPasswordMatch);
+const newPasswordInput = document.getElementById('new_password');
+const confirmPasswordInput = document.getElementById('confirm_password');
+
+newPasswordInput?.addEventListener('input', function() {
+    checkPasswordMatch();
+    // 如果新密码被清空，重置确认密码字段的样式
+    if (this.value.length === 0) {
+        const messageDiv = document.getElementById('passwordMatchMessage');
+        messageDiv.style.display = 'none';
+        confirmPasswordInput.style.borderColor = '#ccc';
+        confirmPasswordInput.style.boxShadow = '';
+        this.style.borderColor = '#ccc';
+        this.style.boxShadow = '';
+    }
+});
+
+confirmPasswordInput?.addEventListener('input', checkPasswordMatch);
 
 // 实时验证当前密码
 let checkCurrentPasswordTimeout;
@@ -756,6 +783,7 @@ document.getElementById('current_password')?.addEventListener('input', function(
         messageDiv.style.display = 'none';
         messageDiv.className = 'password-match-message';
         input.style.borderColor = '';
+        input.style.boxShadow = '';
         return;
     }
     
@@ -777,15 +805,18 @@ document.getElementById('current_password')?.addEventListener('input', function(
                     messageDiv.textContent = '✓ Password match';
                     messageDiv.className = 'password-match-message password-match-success';
                     input.style.borderColor = '#4CAF50';
+                    input.style.boxShadow = '0 0 0 3px rgba(76, 175, 80, 0.1)';
                 } else {
                     messageDiv.textContent = '✗ Password not match';
                     messageDiv.className = 'password-match-message password-match-error';
                     input.style.borderColor = '#dc3545';
+                    input.style.boxShadow = '0 0 0 3px rgba(220, 53, 69, 0.1)';
                 }
             } else {
                 messageDiv.style.display = 'none';
                 messageDiv.className = 'password-match-message';
                 input.style.borderColor = '';
+                input.style.boxShadow = '';
             }
         })
         .catch(error => {
@@ -793,6 +824,7 @@ document.getElementById('current_password')?.addEventListener('input', function(
             messageDiv.style.display = 'none';
             messageDiv.className = 'password-match-message';
             input.style.borderColor = '';
+            input.style.boxShadow = '';
         });
     }, 500); // 延迟 500ms 后检查
 });
