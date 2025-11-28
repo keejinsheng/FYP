@@ -321,14 +321,14 @@ $addresses = $stmt->fetchAll();
                     <button type="submit" class="submit-btn">Update Profile</button>
                 </form>
                    <!-- 添加修改密码部分 -->
-<div class="change-password-section" style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #eee;">
+<div class="change-password-section">
     <h3 class="change-password-heading"><i class="fas fa-lock"></i> Change Password</h3>
     <form method="POST" id="changePasswordForm">
         <input type="hidden" name="action" value="change_password">
         <div class="form-group">
             <label for="current_password">Current Password</label>
             <input type="password" id="current_password" name="current_password" required>
-            <div id="currentPasswordMatchMessage" class="password-match-message" style="display: none; margin-top: 0.5rem; font-size: 0.9rem; padding: 0.5rem 0.75rem; border-radius: 8px; background-color: rgba(255, 255, 255, 0.8);"></div>
+            <div id="currentPasswordMatchMessage" class="password-match-message" style="display: none;"></div>
         </div>
         <div class="form-group">
             <label for="new_password">New Password</label>
@@ -360,9 +360,9 @@ $addresses = $stmt->fetchAll();
         <div class="form-group">
             <label for="confirm_password">Confirm New Password</label>
             <input type="password" id="confirm_password" name="confirm_password" required minlength="6">
-            <div id="passwordMatchMessage" class="password-match-message" style="display: none; margin-top: 0.5rem; font-size: 0.9rem; padding: 0.5rem 0.75rem; border-radius: 8px; background-color: rgba(255, 255, 255, 0.8);"></div>
+            <div id="passwordMatchMessage" class="password-match-message" style="display: none;"></div>
         </div>
-        <button type="submit" class="submit-btn" style="background-color: #28a745;">Change Password</button>
+        <button type="submit" class="submit-btn">Change Password</button>
     </form>
 </div>
             </div>
