@@ -2,6 +2,11 @@
 require_once '../../config/database.php';
 header("Content-Type: application/json; charset=utf-8");
 
+// 确保session已启动（database.php应该已经启动了，但为了安全起见再检查一次）
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
+
 if (!isset($_SESSION['user_id'])) {
     echo json_encode(['status' => 'error', 'message' => 'Not logged in']);
     exit;
@@ -40,13 +45,12 @@ try {
         exit;
     }
     
-    if (password_verify($password, $stored_password)) {
-        echo json_encode(['status' => 'success', 'match' => true]);
-    } else {
-        echo json_encode(['status' => 'success', 'match' => false]);
-    }
+    // 验证密码
+    $match = password_verify($password, $stored_password);
+    echo json_encode(['status' => 'success', 'match' => $match]);
+    
 } catch (Exception $e) {
-    echo json_encode(['status' => 'error', 'message' => 'Database error']);
+    echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
 }
 ?>
 

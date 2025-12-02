@@ -328,7 +328,7 @@ $addresses = $stmt->fetchAll();
         <div class="form-group">
             <label for="current_password">Current Password</label>
             <input type="password" id="current_password" name="current_password" required>
-            <div id="currentPasswordMatchMessage" class="password-match-message" style="display: none;"></div>
+            <div id="currentPasswordMatchMessage" class="password-match-message" style="display: none; margin-top: 0.5rem;"></div>
         </div>
         <div class="form-group">
             <label for="new_password">New Password</label>
@@ -768,66 +768,94 @@ newPasswordInput?.addEventListener('input', function() {
 
 confirmPasswordInput?.addEventListener('input', checkPasswordMatch);
 
-// 实时验证当前密码
+// 实时验证当前密码 - 自动与数据库对比（在 current password 输入框下方显示）
 let checkCurrentPasswordTimeout;
-document.getElementById('current_password')?.addEventListener('input', function() {
-    const password = this.value;
-    const messageDiv = document.getElementById('currentPasswordMatchMessage');
-    const input = this;
+const currentPasswordInput = document.getElementById('current_password');
+const currentPasswordMessageDiv = document.getElementById('currentPasswordMatchMessage');
+
+if (currentPasswordInput && currentPasswordMessageDiv) {
+    console.log('Current password validation initialized');
     
-    // 清除之前的定时器
-    clearTimeout(checkCurrentPasswordTimeout);
-    
-    // 如果密码为空，隐藏消息
-    if (password.length === 0) {
-        messageDiv.style.display = 'none';
-        messageDiv.className = 'password-match-message';
-        input.style.borderColor = '';
-        input.style.boxShadow = '';
-        return;
-    }
-    
-    // 延迟检查，避免频繁请求
-    checkCurrentPasswordTimeout = setTimeout(function() {
-        // 发送 AJAX 请求验证密码
-        fetch('../verify_current_password.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: 'password=' + encodeURIComponent(password)
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                messageDiv.style.display = 'block';
-                if (data.match) {
-                    messageDiv.textContent = '✓ Password match';
-                    messageDiv.className = 'password-match-message password-match-success';
-                    input.style.borderColor = '#4CAF50';
-                    input.style.boxShadow = '0 0 0 3px rgba(76, 175, 80, 0.1)';
-                } else {
-                    messageDiv.textContent = '✗ Password not match';
-                    messageDiv.className = 'password-match-message password-match-error';
-                    input.style.borderColor = '#dc3545';
-                    input.style.boxShadow = '0 0 0 3px rgba(220, 53, 69, 0.1)';
+    currentPasswordInput.addEventListener('input', function() {
+        const password = this.value; // 不要使用 trim()，因为密码可能包含空格
+        
+        // 清除之前的定时器
+        clearTimeout(checkCurrentPasswordTimeout);
+        
+        // 如果密码为空，隐藏消息并重置样式
+        if (password.length === 0) {
+            currentPasswordMessageDiv.style.display = 'none';
+            currentPasswordMessageDiv.className = 'password-match-message';
+            currentPasswordMessageDiv.textContent = '';
+            this.style.borderColor = '';
+            this.style.boxShadow = '';
+            return;
+        }
+        
+        // 延迟检查，避免频繁请求数据库
+        checkCurrentPasswordTimeout = setTimeout(function() {
+            console.log('Checking password...');
+            // 发送 AJAX 请求到数据库验证当前密码
+            fetch('../verify_current_password.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'password=' + encodeURIComponent(password)
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok: ' + response.status);
                 }
-            } else {
-                messageDiv.style.display = 'none';
-                messageDiv.className = 'password-match-message';
-                input.style.borderColor = '';
-                input.style.boxShadow = '';
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            messageDiv.style.display = 'none';
-            messageDiv.className = 'password-match-message';
-            input.style.borderColor = '';
-            input.style.boxShadow = '';
-        });
-    }, 500); // 延迟 500ms 后检查
-});
+                return response.json();
+            })
+            .then(data => {
+                console.log('Response data:', data);
+                if (data.status === 'success') {
+                    // 显示消息在 current password 输入框下方
+                    currentPasswordMessageDiv.style.display = 'block';
+                    if (data.match) {
+                        // 密码匹配数据库
+                        currentPasswordMessageDiv.textContent = 'Password match';
+                        currentPasswordMessageDiv.className = 'password-match-message password-match-success';
+                        currentPasswordInput.style.borderColor = '#28a745';
+                        currentPasswordInput.style.boxShadow = '0 0 0 3px rgba(40, 167, 69, 0.1)';
+                        console.log('Password matched!');
+                    } else {
+                        // 密码不匹配数据库
+                        currentPasswordMessageDiv.textContent = 'Password not match';
+                        currentPasswordMessageDiv.className = 'password-match-message password-match-error';
+                        currentPasswordInput.style.borderColor = '#dc3545';
+                        currentPasswordInput.style.boxShadow = '0 0 0 3px rgba(220, 53, 69, 0.1)';
+                        console.log('Password did not match');
+                    }
+                } else {
+                    // 验证失败，显示错误信息
+                    console.error('Verification failed:', data.message);
+                    currentPasswordMessageDiv.style.display = 'block';
+                    currentPasswordMessageDiv.textContent = 'Error: ' + (data.message || 'Verification failed');
+                    currentPasswordMessageDiv.className = 'password-match-message password-match-error';
+                    currentPasswordInput.style.borderColor = '#dc3545';
+                    currentPasswordInput.style.boxShadow = '0 0 0 3px rgba(220, 53, 69, 0.1)';
+                }
+            })
+            .catch(error => {
+                console.error('Error verifying current password:', error);
+                currentPasswordMessageDiv.style.display = 'block';
+                currentPasswordMessageDiv.textContent = 'Error: Unable to verify password';
+                currentPasswordMessageDiv.className = 'password-match-message password-match-error';
+                currentPasswordInput.style.borderColor = '#dc3545';
+                currentPasswordInput.style.boxShadow = '0 0 0 3px rgba(220, 53, 69, 0.1)';
+            });
+        }, 500); // 延迟 500ms 后检查，减少数据库请求频率
+    });
+} else {
+    console.error('Current password input or message div not found!', {
+        input: currentPasswordInput,
+        messageDiv: currentPasswordMessageDiv
+    });
+}
 
 // 密码表单验证
 document.getElementById('changePasswordForm')?.addEventListener('submit', function(e) {
