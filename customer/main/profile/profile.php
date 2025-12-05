@@ -768,30 +768,7 @@ newPasswordInput?.addEventListener('input', function() {
 
 confirmPasswordInput?.addEventListener('input', checkPasswordMatch);
 
-// 实时验证当前密码 - 自动与数据库对比（在 current password 输入框下方显示）
-let checkCurrentPasswordTimeout;
-const currentPasswordInput = document.getElementById('current_password');
-const currentPasswordMessageDiv = document.getElementById('currentPasswordMatchMessage');
 
-if (currentPasswordInput && currentPasswordMessageDiv) {
-    console.log('Current password validation initialized');
-    
-    currentPasswordInput.addEventListener('input', function() {
-        const password = this.value; // 不要使用 trim()，因为密码可能包含空格
-        
-        // 清除之前的定时器
-        clearTimeout(checkCurrentPasswordTimeout);
-        
-        // 如果密码为空，隐藏消息并重置样式
-        if (password.length === 0) {
-            currentPasswordMessageDiv.style.display = 'none';
-            currentPasswordMessageDiv.className = 'password-match-message';
-            currentPasswordMessageDiv.textContent = '';
-            this.style.borderColor = '';
-            this.style.boxShadow = '';
-            return;
-        }
-        
         // 延迟检查，避免频繁请求数据库
         checkCurrentPasswordTimeout = setTimeout(function() {
             console.log('Checking password...');
