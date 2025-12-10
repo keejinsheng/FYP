@@ -455,8 +455,12 @@ $customers = $stmt->fetchAll();
                 <tbody>
                     <?php foreach ($customers as $c): ?>
                         <tr data-customer-id="<?php echo (int)$c['user_id']; ?>" 
+<<<<<<< HEAD
                             data-customer-name="<?php echo htmlspecialchars(strtolower($c['first_name'] . ' ' . $c['last_name'])); ?>"
                             data-customer-email="<?php echo htmlspecialchars(strtolower($c['email'])); ?>">
+=======
+                            data-customer-name="<?php echo htmlspecialchars(strtolower($c['first_name'] . ' ' . $c['last_name'])); ?>">
+>>>>>>> 24875fb43610183a3f4ce4d3603736e9d0186736
                             <td><?php echo (int)$c['user_id']; ?></td>
                             <td><?php echo htmlspecialchars($c['first_name'] . ' ' . $c['last_name']); ?></td>
                             <td><?php echo htmlspecialchars($c['email']); ?></td>
@@ -725,7 +729,11 @@ $customers = $stmt->fetchAll();
         // Search functionality
         function filterCustomers() {
             const input = document.getElementById('customerSearch');
+<<<<<<< HEAD
             const filter = input.value.toLowerCase().trim();
+=======
+            const filter = input.value.toLowerCase();
+>>>>>>> 24875fb43610183a3f4ce4d3603736e9d0186736
             const table = document.getElementById('customersTable');
             const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
             const noResults = document.getElementById('noResults');
@@ -733,6 +741,7 @@ $customers = $stmt->fetchAll();
 
             for (let i = 0; i < rows.length; i++) {
                 const row = rows[i];
+<<<<<<< HEAD
                 const customerId = (row.getAttribute('data-customer-id') || '').toLowerCase();
                 const customerName = row.getAttribute('data-customer-name') || '';
                 const customerEmail = row.getAttribute('data-customer-email') || '';
@@ -754,6 +763,12 @@ $customers = $stmt->fetchAll();
                     idLabel,
                     idCompact
                 ].join(' ');
+=======
+                const customerId = row.getAttribute('data-customer-id') || '';
+                const customerName = row.getAttribute('data-customer-name') || '';
+                
+                const searchText = customerId + ' ' + customerName;
+>>>>>>> 24875fb43610183a3f4ce4d3603736e9d0186736
                 
                 if (searchText.includes(filter)) {
                     row.style.display = '';

@@ -98,6 +98,7 @@ $admins = $stmt->fetchAll();
         .btn.secondary { background:#555; }
         .form-row { display:flex; gap:1.2rem; flex-wrap:wrap; }
         .form-row > label { flex:1; margin-top:0.7rem; }
+<<<<<<< HEAD
         .search-container {
             margin-bottom: 1.5rem;
             display: flex;
@@ -137,6 +138,8 @@ $admins = $stmt->fetchAll();
         .no-results.show {
             display: block;
         }
+=======
+>>>>>>> 24875fb43610183a3f4ce4d3603736e9d0186736
     </style>
 </head>
 <body>
@@ -158,6 +161,7 @@ $admins = $stmt->fetchAll();
         <?php if ($success_message): ?><div style="color:#28a745; margin-bottom:1rem;"><?php echo htmlspecialchars($success_message); ?></div><?php endif; ?>
         <?php if ($error_message): ?><div style="color:#dc3545; margin-bottom:1rem;"><?php echo htmlspecialchars($error_message); ?></div><?php endif; ?>
 
+<<<<<<< HEAD
         <div class="search-container">
             <div class="search-box">
                 <i class="fas fa-search"></i>
@@ -169,6 +173,11 @@ $admins = $stmt->fetchAll();
             <thead>
                 <tr>
                     <th>Admin ID</th>
+=======
+        <table>
+            <thead>
+                <tr>
+>>>>>>> 24875fb43610183a3f4ce4d3603736e9d0186736
                     <th>Username</th>
                     <th>Name</th>
                     <th>Email</th>
@@ -179,11 +188,15 @@ $admins = $stmt->fetchAll();
             </thead>
             <tbody>
                 <?php foreach ($admins as $a): ?>
+<<<<<<< HEAD
                 <tr data-admin-id="<?php echo (int)$a['admin_id']; ?>"
                     data-admin-username="<?php echo htmlspecialchars(strtolower($a['username'])); ?>"
                     data-admin-name="<?php echo htmlspecialchars(strtolower(trim($a['first_name'] . ' ' . $a['last_name']))); ?>"
                     data-admin-email="<?php echo htmlspecialchars(strtolower($a['email'])); ?>">
                     <td><?php echo (int)$a['admin_id']; ?></td>
+=======
+                <tr>
+>>>>>>> 24875fb43610183a3f4ce4d3603736e9d0186736
                     <td><?php echo htmlspecialchars($a['username']); ?></td>
                     <td><?php echo htmlspecialchars($a['first_name'] . ' ' . $a['last_name']); ?></td>
                     <td><?php echo htmlspecialchars($a['email']); ?></td>
@@ -301,6 +314,7 @@ $admins = $stmt->fetchAll();
     }
     function closeModal(){ modalBg.style.display = 'none'; }
     modalBg.addEventListener('click', (e)=>{ if(e.target===modalBg) closeModal(); });
+<<<<<<< HEAD
     
     function filterAdmins() {
         const input = document.getElementById('adminSearch');
@@ -346,6 +360,8 @@ $admins = $stmt->fetchAll();
             noResults.classList.add('show');
         }
     }
+=======
+>>>>>>> 24875fb43610183a3f4ce4d3603736e9d0186736
     </script>
 </body>
 </html> 
