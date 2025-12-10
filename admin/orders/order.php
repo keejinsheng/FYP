@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $orderId = (int)($_POST['order_id'] ?? 0);
     $newStatus = trim($_POST['order_status'] ?? '');
     // Allowed statuses (refined)
-    $allowedStatuses = ['Pending', 'Confirmed', 'Delivered', 'Preparing', 'Cancelled'];
+    $allowedStatuses = ['Pending', 'Delivered', 'Preparing'];
     if ($orderId > 0 && in_array($newStatus, $allowedStatuses, true)) {
         $stmt = $pdo->prepare('UPDATE `order` SET order_status = ?, updated_at = NOW() WHERE order_id = ?');
         $stmt->execute([$newStatus, $orderId]);
@@ -171,11 +171,8 @@ $orders = $stmt->fetchAll();
             display: inline-block;
         }
         .status-pending { background: var(--warning-color); color: #000; }
-        .status-confirmed { background: var(--info-color); color: #fff; }
         .status-preparing { background: #9c27b0; color: #fff; }
-        .status-ready { background: var(--success-color); color: #fff; }
         .status-delivered { background: var(--success-color); color: #fff; }
-        .status-cancelled { background: var(--danger-color); color: #fff; }
         /* Pretty status select */
         .status-select {
             appearance: none;
@@ -191,10 +188,8 @@ $orders = $stmt->fetchAll();
         }
         .status-select:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(255,75,43,.15); }
         .status-select.pending { border-color: var(--warning-color); box-shadow: inset 0 0 0 1px var(--warning-color); }
-        .status-select.confirmed { border-color: var(--info-color); box-shadow: inset 0 0 0 1px var(--info-color); }
         .status-select.preparing { border-color: #9c27b0; box-shadow: inset 0 0 0 1px #9c27b0; }
         .status-select.delivered { border-color: var(--success-color); box-shadow: inset 0 0 0 1px var(--success-color); }
-        .status-select.cancelled { border-color: var(--danger-color); box-shadow: inset 0 0 0 1px var(--danger-color); }
         /* View Details Button */
         .view-details-btn {
             background: var(--gradient-primary);
@@ -505,7 +500,7 @@ $orders = $stmt->fetchAll();
                                 <input type="hidden" name="order_id" value="<?php echo (int)$order['order_id']; ?>">
                                 <select name="order_status" class="status-select" data-status-select>
                                     <?php
-                                        $statuses = ['Pending','Confirmed','Delivered','Preparing','Cancelled'];
+                                        $statuses = ['Pending','Preparing','Delivered'];
                                         foreach ($statuses as $status) {
                                             $selected = $status === $order['order_status'] ? 'selected' : '';
                                             echo '<option value="' . htmlspecialchars($status) . '" ' . $selected . '>' . htmlspecialchars($status) . '</option>';

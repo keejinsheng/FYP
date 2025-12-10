@@ -60,8 +60,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Fetch admins
-$stmt = $pdo->prepare("SELECT admin_id, username, email, first_name, last_name, role, is_active, created_at FROM admin_user ORDER BY created_at DESC");
+// Fetch admins (exclude Super Admin)
+$stmt = $pdo->prepare("SELECT admin_id, username, email, first_name, last_name, role, is_active, created_at FROM admin_user WHERE role != 'Super Admin' ORDER BY created_at DESC");
 $stmt->execute();
 $admins = $stmt->fetchAll();
 ?>
