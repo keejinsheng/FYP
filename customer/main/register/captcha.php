@@ -1,29 +1,4 @@
 <?php
-<<<<<<< HEAD
-header("Content-Type: application/json");
-
-// 绝对路径背景图
-$imgPath = __DIR__ . "/bg.jpg";
-
-if (!file_exists($imgPath)) {
-    $imgPath = __DIR__ . "/bg.jpeg";
-    if (!file_exists($imgPath)) {
-        echo json_encode(["error" => "Background image not found"]);
-        exit;
-    }
-}
-
-// 自动判断图片格式
-$ext = strtolower(pathinfo($imgPath, PATHINFO_EXTENSION));
-
-switch ($ext) {
-    case "jpg":
-    case "jpeg":
-        $im = imagecreatefromjpeg($imgPath);
-        break;
-    case "png":
-        $im = imagecreatefrompng($imgPath);
-=======
 // captcha.php
 session_start();
 header("Content-Type: application/json; charset=utf-8");
@@ -107,35 +82,11 @@ switch ($ext) {
         break;
     case "png":
         $im = @imagecreatefrompng($imgPath);
->>>>>>> 24875fb43610183a3f4ce4d3603736e9d0186736
         break;
     default:
         echo json_encode(["error" => "Unsupported image format"]);
         exit;
 }
-<<<<<<< HEAD
-
-$width  = imagesx($im);
-$height = imagesy($im);
-$blockSize = 50;
-
-// 生成拼图块位置
-$x = rand(60, $width - 80);
-$y = rand(20, $height - 80);
-
-// 拼图块
-$block = imagecreatetruecolor($blockSize, $blockSize);
-imagecopy($block, $im, 0, 0, $x, $y, $blockSize, $blockSize);
-
-// 背景图（挖洞）
-$mask = imagecreatetruecolor($width, $height);
-imagecopy($mask, $im, 0, 0, 0, 0, $width, $height);
-
-$white = imagecolorallocate($mask, 255, 255, 255);
-imagefilledrectangle($mask, $x, $y, $x + $blockSize, $y + $blockSize, $white);
-
-// 输出 block
-=======
 if ($im === false) {
     echo json_encode(["error" => "Failed to open image (maybe corrupted)"]);
     exit;
@@ -163,25 +114,14 @@ $transparent = imagecolorallocate($mask, 255, 255, 255);
 imagefilledrectangle($mask, $x, $y, $x + $BLOCK_SIZE, $y + $BLOCK_SIZE, $transparent);
 
 // 输出为 base64 png（block & bg）
->>>>>>> 24875fb43610183a3f4ce4d3603736e9d0186736
 ob_start();
 imagepng($block);
 $blockBase64 = base64_encode(ob_get_clean());
 
-<<<<<<< HEAD
-// 输出背景图
-=======
->>>>>>> 24875fb43610183a3f4ce4d3603736e9d0186736
 ob_start();
 imagepng($mask);
 $bgBase64 = base64_encode(ob_get_clean());
 
-<<<<<<< HEAD
-echo json_encode([
-    "block"   => "data:image/png;base64," . $blockBase64,
-    "bg"      => "data:image/png;base64," . $bgBase64,
-    "answerX" => $x
-=======
 // 检查是否有旧的 token 需要继承尝试次数
 $oldToken = $_GET['old_token'] ?? '';
 $inheritedAttempts = 0;
@@ -226,5 +166,4 @@ echo json_encode([
     "height"  => $height,
     // 调试信息：显示使用的图片文件名（可选，生产环境可以移除）
     "debug_image" => basename($imgPath)
->>>>>>> 24875fb43610183a3f4ce4d3603736e9d0186736
 ]);

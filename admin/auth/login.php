@@ -146,22 +146,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             gap: 0.5rem;
             color: var(--text-gray);
         }
-<<<<<<< HEAD
         .forgot-link a {
             color: var(--primary-color);
             text-decoration: none;
             font-size: 0.9rem;
         }
         .forgot-link a:hover {
-=======
-        .forgot-password {
-            color: var(--primary-color);
-            text-decoration: none;
-            font-size: 0.9rem;
-            cursor: pointer;
-        }
-        .forgot-password:hover {
->>>>>>> 24875fb43610183a3f4ce4d3603736e9d0186736
             text-decoration: underline;
         }
         .login-btn {
@@ -179,22 +169,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             transform: translateY(-2px);
             box-shadow: var(--shadow-strong);
         }
-<<<<<<< HEAD
-=======
-        .register-link {
-            text-align: center;
-            margin-top: 1.5rem;
-            color: var(--text-gray);
-        }
-        .register-link a {
-            color: var(--primary-color);
-            text-decoration: none;
-            font-weight: 500;
-        }
-        .register-link a:hover {
-            text-decoration: underline;
-        }
->>>>>>> 24875fb43610183a3f4ce4d3603736e9d0186736
     </style>
 </head>
 <body>
@@ -237,23 +211,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input type="checkbox" name="remember" value="1">
                         Remember me
                     </label>
-<<<<<<< HEAD
                     <span class="forgot-link">
                         <a href="forgot_password.php">Forgot Password?</a>
                     </span>
-=======
->>>>>>> 24875fb43610183a3f4ce4d3603736e9d0186736
                 </div>
 
                 <button type="submit" class="login-btn">Sign In</button>
             </form>
 
-<<<<<<< HEAD
-=======
-            <div class="register-link">
-                Don't have an admin account? <a href="register.php">Register here</a>
-            </div>
->>>>>>> 24875fb43610183a3f4ce4d3603736e9d0186736
         </div>
     </div>
 

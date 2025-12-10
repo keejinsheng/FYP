@@ -494,12 +494,8 @@ $orders = $stmt->fetchAll();
                     <?php foreach ($orders as $order): ?>
                     <tr data-order-id="<?php echo (int)$order['order_id']; ?>" 
                         data-order-number="<?php echo htmlspecialchars(strtolower($order['order_number'])); ?>" 
-<<<<<<< HEAD
                         data-customer-name="<?php echo htmlspecialchars(strtolower($order['first_name'] . ' ' . $order['last_name'])); ?>"
                         data-order-email="<?php echo htmlspecialchars(strtolower($order['email'])); ?>">
-=======
-                        data-customer-name="<?php echo htmlspecialchars(strtolower($order['first_name'] . ' ' . $order['last_name'])); ?>">
->>>>>>> 24875fb43610183a3f4ce4d3603736e9d0186736
                             <td><?php echo (int)$order['order_id']; ?></td>
                             <td><?php echo htmlspecialchars($order['order_number']); ?></td>
                             <td><?php echo htmlspecialchars($order['first_name'] . ' ' . $order['last_name']); ?><br><span style="color: var(--text-gray); font-size: 0.9em;">(<?php echo htmlspecialchars($order['email']); ?>)</span></td>
@@ -750,11 +746,7 @@ $orders = $stmt->fetchAll();
         // Search functionality
         function filterOrders() {
             const input = document.getElementById('orderSearch');
-<<<<<<< HEAD
             const filter = input.value.toLowerCase().trim();
-=======
-            const filter = input.value.toLowerCase();
->>>>>>> 24875fb43610183a3f4ce4d3603736e9d0186736
             const table = document.getElementById('ordersTable');
             const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
             const noResults = document.getElementById('noResults');
@@ -762,7 +754,6 @@ $orders = $stmt->fetchAll();
 
             for (let i = 0; i < rows.length; i++) {
                 const row = rows[i];
-<<<<<<< HEAD
                 const orderId = (row.getAttribute('data-order-id') || '').toLowerCase();
                 const orderNumber = row.getAttribute('data-order-number') || '';
                 const customerName = row.getAttribute('data-customer-name') || '';
@@ -786,13 +777,6 @@ $orders = $stmt->fetchAll();
                     plainIdLabel,
                     idCompact
                 ].join(' ');
-=======
-                const orderId = row.getAttribute('data-order-id') || '';
-                const orderNumber = row.getAttribute('data-order-number') || '';
-                const customerName = row.getAttribute('data-customer-name') || '';
-                
-                const searchText = orderId + ' ' + orderNumber + ' ' + customerName;
->>>>>>> 24875fb43610183a3f4ce4d3603736e9d0186736
                 
                 if (searchText.includes(filter)) {
                     row.style.display = '';
