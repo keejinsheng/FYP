@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 10, 2025 at 06:45 PM
+-- Generation Time: Dec 11, 2025 at 04:13 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -47,7 +47,7 @@ CREATE TABLE `admin_user` (
 --
 
 INSERT INTO `admin_user` (`admin_id`, `username`, `email`, `password_hash`, `first_name`, `last_name`, `role`, `is_active`, `created_at`, `updated_at`, `reset_token`, `token_expiry`) VALUES
-(1, 'jason', 'jinsheng122@gmail.com', '$2y$10$lemN0FW3zBPYVhVoGSFE1e32KldP68stbCXlxGF/Spq1v1kdKGFhe', 'kee', 'jin sheng', 'Staff', 1, '2025-10-30 20:37:04', '2025-12-10 17:30:22', NULL, NULL),
+(1, 'jason', 'jinsheng122@gmail.com', '$2y$10$lemN0FW3zBPYVhVoGSFE1e32KldP68stbCXlxGF/Spq1v1kdKGFhe', 'kee', 'jin sheng', 'Staff', 1, '2025-10-30 20:37:04', '2025-12-11 01:15:47', '932924', '2025-12-11 02:25:47'),
 (2, 'Shaun', 'shaun123@gmail.com', '$2y$10$XNd.3RaVEzaS12M39AMsue.2ISG.fTSchCVoSpXSf8nVL9.QZq6Gm', 'Chua Shen', 'Lin Shaun', 'Staff', 0, '2025-11-03 17:20:25', '2025-11-26 02:28:12', NULL, NULL),
 (3, 'SuperAdmin', 'zee271810@gmail.com', '$2y$10$UlkbY1NUlFlbZgOxO8E.3eCix1cl7nXBul7I1TTQWaODWwY4K8zva', 'Kee', 'Jin Sheng', 'Super Admin', 1, '2025-11-19 06:28:38', '2025-11-25 17:25:03', NULL, NULL);
 
