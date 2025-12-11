@@ -19,11 +19,29 @@ if (!isset($_SESSION['last_order'])) {
 
 $order = $_SESSION['last_order'];
 $pdo = getDBConnection();
+$user_id = getCurrentUserId();
 
 // Update payment status to completed
 try {
     $stmt = $pdo->prepare("UPDATE payment SET payment_status = 'Completed' WHERE order_id = ?");
     $stmt->execute([$order['order_id']]);
+} catch (Exception $e) {
+    // Log error but continue
+}
+
+// Fetch existing reviews for products in this order
+$existing_reviews = [];
+try {
+    $stmt = $pdo->prepare("
+        SELECT product_id, rating, comment, review_id 
+        FROM review 
+        WHERE order_id = ? AND user_id = ?
+    ");
+    $stmt->execute([$order['order_id'], $user_id]);
+    $reviews = $stmt->fetchAll();
+    foreach ($reviews as $review) {
+        $existing_reviews[$review['product_id']] = $review;
+    }
 } catch (Exception $e) {
     // Log error but continue
 }
@@ -273,6 +291,131 @@ $order_data = $order;
             margin-bottom: 2rem;
         }
 
+        .rating-section {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .rating-section h3 {
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--text-gray);
+            padding-bottom: 0.5rem;
+        }
+
+        .rating-item {
+            background: var(--background-dark);
+            border: 1px solid var(--text-gray);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .rating-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .rating-item-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .rating-item-image {
+            width: 50px;
+            height: 50px;
+            border-radius: 6px;
+            object-fit: cover;
+        }
+
+        .rating-item-name {
+            font-weight: 600;
+            color: var(--text-light);
+        }
+
+        .star-rating {
+            display: flex;
+            gap: 0.3rem;
+            margin-bottom: 1rem;
+            align-items: center;
+        }
+
+        .star {
+            font-size: 1.8rem;
+            color: #666;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .star:hover {
+            transform: scale(1.1);
+        }
+
+        .star.active {
+            color: #ffc107;
+        }
+
+        .star-rating-label {
+            margin-left: 0.5rem;
+            color: var(--text-gray);
+            font-size: 0.9rem;
+        }
+
+        .rating-comment {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid var(--text-gray);
+            border-radius: 6px;
+            background: var(--card-bg);
+            color: var(--text-light);
+            font-family: 'Inter', sans-serif;
+            resize: vertical;
+            min-height: 80px;
+            box-sizing: border-box;
+        }
+
+        .rating-comment:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .submit-rating-btn {
+            background: var(--primary-color);
+            color: var(--text-light);
+            border: none;
+            padding: 0.6rem 1.5rem;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 500;
+            margin-top: 0.5rem;
+            transition: var(--transition);
+        }
+
+        .submit-rating-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-soft);
+            opacity: 0.9;
+        }
+
+        .submit-rating-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .rating-success {
+            color: #4caf50;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            display: none;
+        }
+
+        .rating-success.show {
+            display: block;
+        }
+
         @media (max-width: 768px) {
             .action-buttons {
                 flex-direction: column;
@@ -282,6 +425,11 @@ $order_data = $order;
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 1rem;
+            }
+
+            .rating-item-header {
+                flex-direction: column;
+                align-items: flex-start;
             }
         }
     </style>
@@ -369,6 +517,62 @@ $order_data = $order;
             </div>
         </div>
 
+        <div class="rating-section">
+            <h3><i class="fas fa-star"></i> Rate Your Order</h3>
+            <p style="color: var(--text-gray); margin-bottom: 1.5rem;">Help us improve by rating the products you ordered:</p>
+            
+            <?php foreach ($order_data['items'] as $item): 
+                $product_id = $item['product_id'];
+                $existing_review = $existing_reviews[$product_id] ?? null;
+                $current_rating = $existing_review ? $existing_review['rating'] : 0;
+                $current_comment = $existing_review ? $existing_review['comment'] : '';
+            ?>
+                <div class="rating-item" data-product-id="<?php echo $product_id; ?>">
+                    <div class="rating-item-header">
+                        <img src="../../../food_images/<?php echo htmlspecialchars($item['image']); ?>" 
+                             alt="<?php echo htmlspecialchars($item['product_name']); ?>" 
+                             class="rating-item-image">
+                        <div class="rating-item-name"><?php echo htmlspecialchars($item['product_name']); ?></div>
+                    </div>
+                    
+                    <div class="star-rating" data-product-id="<?php echo $product_id; ?>">
+                        <?php for ($i = 1; $i <= 5; $i++): ?>
+                            <span class="star" 
+                                  data-rating="<?php echo $i; ?>" 
+                                  data-product-id="<?php echo $product_id; ?>"
+                                  onclick="setRating(<?php echo $product_id; ?>, <?php echo $i; ?>)"
+                                  onmouseover="hoverRating(<?php echo $product_id; ?>, <?php echo $i; ?>)"
+                                  onmouseout="resetRating(<?php echo $product_id; ?>)">
+                                <i class="fas fa-star"></i>
+                            </span>
+                        <?php endfor; ?>
+                        <span class="star-rating-label" id="rating-label-<?php echo $product_id; ?>">
+                            <?php if ($current_rating > 0): ?>
+                                <?php echo $current_rating; ?> star<?php echo $current_rating > 1 ? 's' : ''; ?>
+                            <?php else: ?>
+                                Click to rate
+                            <?php endif; ?>
+                        </span>
+                    </div>
+                    
+                    <textarea class="rating-comment" 
+                              id="comment-<?php echo $product_id; ?>" 
+                              placeholder="Share your thoughts about this product (optional)..."><?php echo htmlspecialchars($current_comment); ?></textarea>
+                    
+                    <button type="button" 
+                            class="submit-rating-btn" 
+                            onclick="submitRating(<?php echo $product_id; ?>, <?php echo $order_data['order_id']; ?>)"
+                            id="submit-btn-<?php echo $product_id; ?>">
+                        <?php echo $existing_review ? 'Update Review' : 'Submit Review'; ?>
+                    </button>
+                    
+                    <div class="rating-success" id="success-<?php echo $product_id; ?>">
+                        <i class="fas fa-check-circle"></i> Review saved successfully!
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+
         <div class="action-buttons">
             <a href="../../api/download_receipt.php<?php echo isset($order_data['order_id']) ? '?order_id=' . $order_data['order_id'] : ''; ?>" class="btn btn-primary" target="_blank">
                 <i class="fas fa-download"></i> Download Receipt (PDF)
@@ -383,6 +587,123 @@ $order_data = $order;
     </div>
 
     <script>
+        // Store current ratings for each product
+        const currentRatings = {};
+        
+        // Initialize ratings from existing reviews
+        <?php foreach ($order_data['items'] as $item): 
+            $product_id = $item['product_id'];
+            $existing_review = $existing_reviews[$product_id] ?? null;
+            $current_rating = $existing_review ? $existing_review['rating'] : 0;
+        ?>
+            currentRatings[<?php echo $product_id; ?>] = <?php echo $current_rating; ?>;
+            if (<?php echo $current_rating; ?> > 0) {
+                updateStarDisplay(<?php echo $product_id; ?>, <?php echo $current_rating; ?>);
+            }
+        <?php endforeach; ?>
+        
+        // Set rating when star is clicked
+        function setRating(productId, rating) {
+            currentRatings[productId] = rating;
+            updateStarDisplay(productId, rating);
+            updateRatingLabel(productId, rating);
+        }
+        
+        // Hover effect on stars
+        function hoverRating(productId, rating) {
+            const stars = document.querySelectorAll(`.star[data-product-id="${productId}"]`);
+            stars.forEach((star, index) => {
+                if (index < rating) {
+                    star.classList.add('active');
+                } else {
+                    star.classList.remove('active');
+                }
+            });
+        }
+        
+        // Reset to current rating when mouse leaves
+        function resetRating(productId) {
+            const currentRating = currentRatings[productId] || 0;
+            updateStarDisplay(productId, currentRating);
+        }
+        
+        // Update star display
+        function updateStarDisplay(productId, rating) {
+            const stars = document.querySelectorAll(`.star[data-product-id="${productId}"]`);
+            stars.forEach((star, index) => {
+                if (index < rating) {
+                    star.classList.add('active');
+                } else {
+                    star.classList.remove('active');
+                }
+            });
+        }
+        
+        // Update rating label
+        function updateRatingLabel(productId, rating) {
+            const label = document.getElementById(`rating-label-${productId}`);
+            if (rating > 0) {
+                label.textContent = rating + ' star' + (rating > 1 ? 's' : '');
+            } else {
+                label.textContent = 'Click to rate';
+            }
+        }
+        
+        // Submit rating
+        function submitRating(productId, orderId) {
+            const rating = currentRatings[productId] || 0;
+            const comment = document.getElementById(`comment-${productId}`).value.trim();
+            const submitBtn = document.getElementById(`submit-btn-${productId}`);
+            const successMsg = document.getElementById(`success-${productId}`);
+            
+            // Validate rating
+            if (rating === 0) {
+                alert('Please select a rating (1-5 stars) before submitting.');
+                return;
+            }
+            
+            // Disable button during submission
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Saving...';
+            
+            // Create form data
+            const formData = new FormData();
+            formData.append('order_id', orderId);
+            formData.append('product_id', productId);
+            formData.append('rating', rating);
+            formData.append('comment', comment);
+            
+            // Send AJAX request
+            fetch('../../api/save_review.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    successMsg.classList.add('show');
+                    submitBtn.textContent = 'Update Review';
+                    
+                    // Hide success message after 3 seconds
+                    setTimeout(() => {
+                        successMsg.classList.remove('show');
+                    }, 3000);
+                } else {
+                    alert(data.message || 'Error saving review. Please try again.');
+                    submitBtn.textContent = currentRatings[productId] > 0 ? 'Update Review' : 'Submit Review';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error saving review. Please try again.');
+                submitBtn.textContent = currentRatings[productId] > 0 ? 'Update Review' : 'Submit Review';
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+            });
+        }
+        
         // Remove auto-redirect to let user read the receipt
         // setTimeout(function() {
         //     window.location.href = '../dashboard/Cdashboard.php';
