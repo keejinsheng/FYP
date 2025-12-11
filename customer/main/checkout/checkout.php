@@ -560,6 +560,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <option value="">Select Payment Method</option>
                                 <option value="Cash">Cash on Delivery</option>
                                 <option value="Credit Card">Credit/Debit Card</option>
+                                <option value="Online Banking">Online Banking</option>
                             </select>
                         </div>
                     </div>

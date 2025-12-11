@@ -145,6 +145,16 @@ $total = $subtotal + $tax_amount + $delivery_fee;
             font-size: 1.2rem;
         }
 
+        .price-calculation {
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .price-total {
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
         .quantity-controls {
             display: flex;
             align-items: center;
@@ -303,7 +313,15 @@ $total = $subtotal + $tax_amount + $delivery_fee;
                                 </div>
                             </div>
                             <div class="item-actions">
-                                <div class="item-price">RM <?php echo number_format($item['price'] * $item['quantity'], 2); ?></div>
+                                <div class="item-price">
+                                    <?php if ($item['quantity'] >= 2): ?>
+                                        <span class="price-calculation">(RM <?php echo number_format($item['price'], 2); ?> × <?php echo $item['quantity']; ?> = </span>
+                                    <?php endif; ?>
+                                    <span class="price-total">RM <?php echo number_format($item['price'] * $item['quantity'], 2); ?></span>
+                                    <?php if ($item['quantity'] >= 2): ?>
+                                        <span class="price-calculation">)</span>
+                                    <?php endif; ?>
+                                </div>
                                 <button class="remove-btn" onclick="removeFromCart(<?php echo $item['cart_id']; ?>)">Remove</button>
                             </div>
                         </div>
