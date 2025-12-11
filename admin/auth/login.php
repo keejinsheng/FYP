@@ -146,6 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             gap: 0.5rem;
             color: var(--text-gray);
         }
+
         .forgot-link a {
             color: var(--primary-color);
             text-decoration: none;
@@ -214,11 +215,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <span class="forgot-link">
                         <a href="forgot_password.php">Forgot Password?</a>
                     </span>
+                    <span class="forgot-link">
+                        <a href="forgot_password.php">Forgot Password?</a>
+                    </span>
                 </div>
 
                 <button type="submit" class="login-btn">Sign In</button>
             </form>
-
         </div>
     </div>
 

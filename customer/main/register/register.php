@@ -315,7 +315,6 @@ if (($_POST['captcha_verified'] ?? '0') !== '1') {
         .login-link a:hover {
             text-decoration: underline;
         }
-
         /* ====== Slider Captcha Styles ====== */
         .captcha-container {
             padding: 1.5rem;
@@ -506,6 +505,7 @@ if (($_POST['captcha_verified'] ?? '0') !== '1') {
                 grid-template-columns: 1fr;
             }
 
+
             .captcha-frame {
                 max-width: 100%;
             }
@@ -609,6 +609,7 @@ if (($_POST['captcha_verified'] ?? '0') !== '1') {
                 </div>
                 
                 <!-- ====== Slider Captcha START ====== -->
+
                 <div class="form-group full-width">
                     <label>Verify you are human *</label>
 
@@ -640,6 +641,25 @@ if (($_POST['captcha_verified'] ?? '0') !== '1') {
     <input type="hidden" id="captcha_token" name="captcha_token" value="">
 </div>
                 <!-- ====== Slider Captcha END ====== -->
+<div class="form-group full-width" style="margin-top: 1.5rem;">
+    <label style="margin-bottom:10px; display:block;">Verify you are human *</label>
+
+    <div id="captchaBox" style="padding:10px; background:#222; border:1px solid #444; border-radius:8px;">
+        <p style="font-size:14px; color:#ccc; margin-bottom:10px;">Drag slider to complete puzzle</p>
+
+        <div style="position:relative; width:100%; max-width:300px; margin:auto; min-height:150px;">
+            <img id="bgImg" width="100%" style="border-radius:6px; display:block; max-width:100%; height:auto;" alt="Captcha Background">
+            <img id="blockImg" style="position:absolute; top:0; left:0; width:50px; height:50px; display:block; pointer-events:none;" alt="Captcha Block">
+        </div>
+
+        <input type="range" id="slider" min="0" max="250" value="0" 
+               style="width:100%; margin-top:15px;">
+    </div>
+
+    <!-- 验证成功后存状态 -->
+    <input type="hidden" id="captcha_verified" name="captcha_verified" value="0">
+</div>
+<!-- ====== Slider Captcha END ====== -->
 
 
                 <button type="submit" class="register-btn">Create Account</button>
@@ -665,6 +685,20 @@ if (($_POST['captcha_verified'] ?? '0') !== '1') {
     const tokenInput = document.getElementById('captcha_token');
 
     let currentToken = null;
+    <script>
+    (() => {
+        const slider = document.getElementById('slider');
+        const blockImg = document.getElementById('blockImg');
+        const bgImg = document.getElementById('bgImg');
+        const loading = document.getElementById('captchaLoading');
+        const captchaBox = document.getElementById('captchaBox');
+        const captchaMsg = document.getElementById('captchaMsg');
+        const attemptsLeftEl = document.getElementById('attemptsLeft');
+        const reloadBtn = document.getElementById('reloadCaptcha');
+        const verifiedInput = document.getElementById('captcha_verified');
+        const tokenInput = document.getElementById('captcha_token');
+
+        let currentToken = null;
         let currentMax = 250;
         let currentScaleX = 1; // 保存当前的缩放比例
 
@@ -1085,6 +1119,62 @@ if (($_POST['captcha_verified'] ?? '0') !== '1') {
         // 初始化
         checkPasswordStrength(passwordInput.value);
     })();
+    </script>
+let answerX = 0;
+let slider = document.getElementById("slider");
+let blockImg = document.getElementById("blockImg");
+let verifiedInput = document.getElementById("captcha_verified");
+
+function loadCaptcha() {
+    fetch("captcha.php")
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                alert("验证码加载失败: " + data.error);
+                return;
+            }
+
+            document.getElementById("bgImg").src = data.bg;
+            blockImg.src = data.block;
+
+            answerX = data.answerX;
+            slider.value = 0;
+            blockImg.style.left = "0px";
+            verifiedInput.value = "0";
+        })
+        .catch(err => {
+            alert("验证码加载失败，请刷新页面重试");
+        });
+}
+
+// 滑动拼图
+slider.addEventListener("input", function () {
+    blockImg.style.left = this.value + "px";
+});
+
+// 松手验证
+slider.addEventListener("change", function () {
+    let userX = this.value;
+
+    fetch("verify.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `userX=${userX}&answerX=${answerX}`
+    })
+    .then(res => res.json())
+    .then(result => {
+        if (result.status === "success") {
+            alert("✔ Verification Success!");
+            verifiedInput.value = "1";
+        } else {
+            alert("✖ Verification Failed. Try again!");
+            loadCaptcha();
+        }
+    });
+});
+
+loadCaptcha();
+
 </script>
 
 </body>

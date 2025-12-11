@@ -1,4 +1,5 @@
 <?php
+
 // verify.php
 session_start();
 header("Content-Type: application/json; charset=utf-8");
@@ -55,4 +56,13 @@ if (abs($userX - $answerX) <= $TOLERANCE) {
         echo json_encode(['status' => 'fail', 'attempts' => $meta['attempts'], 'remaining_attempts' => $left]);
     }
     exit;
+header("Content-Type: application/json");
+
+$userX   = intval($_POST['userX'] ?? 0);
+$answerX = intval($_POST['answerX'] ?? -999);
+
+if (abs($userX - $answerX) <= 6) {
+    echo json_encode(["status" => "success"]);
+} else {
+    echo json_encode(["status" => "fail"]);
 }

@@ -457,6 +457,8 @@ $customers = $stmt->fetchAll();
                         <tr data-customer-id="<?php echo (int)$c['user_id']; ?>" 
                             data-customer-name="<?php echo htmlspecialchars(strtolower($c['first_name'] . ' ' . $c['last_name'])); ?>"
                             data-customer-email="<?php echo htmlspecialchars(strtolower($c['email'])); ?>">
+                            data-customer-name="<?php echo htmlspecialchars(strtolower($c['first_name'] . ' ' . $c['last_name'])); ?>"
+                            data-customer-email="<?php echo htmlspecialchars(strtolower($c['email'])); ?>">
                             <td><?php echo (int)$c['user_id']; ?></td>
                             <td><?php echo htmlspecialchars($c['first_name'] . ' ' . $c['last_name']); ?></td>
                             <td><?php echo htmlspecialchars($c['email']); ?></td>
@@ -725,6 +727,7 @@ $customers = $stmt->fetchAll();
         // Search functionality
         function filterCustomers() {
             const input = document.getElementById('customerSearch');
+            const filter = input.value.toLowerCase().trim();
             const filter = input.value.toLowerCase().trim();
             const table = document.getElementById('customersTable');
             const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');

@@ -491,6 +491,8 @@ $orders = $stmt->fetchAll();
                         data-order-number="<?php echo htmlspecialchars(strtolower($order['order_number'])); ?>" 
                         data-customer-name="<?php echo htmlspecialchars(strtolower($order['first_name'] . ' ' . $order['last_name'])); ?>"
                         data-order-email="<?php echo htmlspecialchars(strtolower($order['email'])); ?>">
+                        data-customer-name="<?php echo htmlspecialchars(strtolower($order['first_name'] . ' ' . $order['last_name'])); ?>"
+                        data-order-email="<?php echo htmlspecialchars(strtolower($order['email'])); ?>">
                             <td><?php echo (int)$order['order_id']; ?></td>
                             <td><?php echo htmlspecialchars($order['order_number']); ?></td>
                             <td><?php echo htmlspecialchars($order['first_name'] . ' ' . $order['last_name']); ?><br><span style="color: var(--text-gray); font-size: 0.9em;">(<?php echo htmlspecialchars($order['email']); ?>)</span></td>
@@ -741,6 +743,7 @@ $orders = $stmt->fetchAll();
         // Search functionality
         function filterOrders() {
             const input = document.getElementById('orderSearch');
+            const filter = input.value.toLowerCase().trim();
             const filter = input.value.toLowerCase().trim();
             const table = document.getElementById('ordersTable');
             const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');

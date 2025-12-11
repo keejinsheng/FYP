@@ -98,6 +98,7 @@ $admins = $stmt->fetchAll();
         .btn.secondary { background:#555; }
         .form-row { display:flex; gap:1.2rem; flex-wrap:wrap; }
         .form-row > label { flex:1; margin-top:0.7rem; }
+
         .search-container {
             margin-bottom: 1.5rem;
             display: flex;
@@ -179,6 +180,7 @@ $admins = $stmt->fetchAll();
             </thead>
             <tbody>
                 <?php foreach ($admins as $a): ?>
+
                 <tr data-admin-id="<?php echo (int)$a['admin_id']; ?>"
                     data-admin-username="<?php echo htmlspecialchars(strtolower($a['username'])); ?>"
                     data-admin-name="<?php echo htmlspecialchars(strtolower(trim($a['first_name'] . ' ' . $a['last_name']))); ?>"
@@ -301,6 +303,7 @@ $admins = $stmt->fetchAll();
     }
     function closeModal(){ modalBg.style.display = 'none'; }
     modalBg.addEventListener('click', (e)=>{ if(e.target===modalBg) closeModal(); });
+
     
     function filterAdmins() {
         const input = document.getElementById('adminSearch');
