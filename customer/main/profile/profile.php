@@ -320,7 +320,7 @@ $addresses = $stmt->fetchAll();
                     </div>
                     <button type="submit" class="submit-btn">Update Profile</button>
                 </form>
-                   <!-- 添加修改密码部分 -->.
+                   <!-- 添加修改密码部分 -->
 <div class="change-password-section">
     <h3 class="change-password-heading"><i class="fas fa-lock"></i> Change Password</h3>
     <form method="POST" id="changePasswordForm">
