@@ -19,20 +19,20 @@ try {
     $rawRoleFromDb = $roleRow;
     if ($roleRow !== false && trim((string)$roleRow) !== '') {
         $_SESSION['admin_role'] = $roleRow; // keep session in sync
-        $norm = strtolower(preg_replace('/[^a-z]/', '', (string)$roleRow));
+        $norm = normalizeRole($roleRow);
         $isSuperAdmin = ($norm === 'superadmin' || strpos($norm, 'super') !== false);
     } else {
         // Fallback to session role
         $roleSource = 'session';
         $sessRole = $_SESSION['admin_role'] ?? '';
-        $norm = strtolower(preg_replace('/[^a-z]/', '', (string)$sessRole));
+        $norm = normalizeRole($sessRole);
         $isSuperAdmin = ($norm === 'superadmin' || strpos($norm, 'super') !== false);
     }
 } catch (Exception $e) {
     // If DB fails, use session
     $roleSource = 'session';
     $sessRole = $_SESSION['admin_role'] ?? '';
-    $norm = strtolower(preg_replace('/[^a-z]/', '', (string)$sessRole));
+    $norm = normalizeRole($sessRole);
     $isSuperAdmin = ($norm === 'superadmin' || strpos($norm, 'super') !== false);
 }
 
@@ -100,7 +100,7 @@ $today_revenue = $stmt->fetchColumn() ?: 0;
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <style>
         :root {
             --primary-color: #FF4B2B;
@@ -529,11 +529,8 @@ $today_revenue = $stmt->fetchColumn() ?: 0;
         }
 
         .status-pending { background: var(--warning-color); color: #000; }
-        .status-confirmed { background: var(--info-color); color: #fff; }
         .status-preparing { background: #9c27b0; color: #fff; }
-        .status-ready { background: var(--success-color); color: #fff; }
         .status-delivered { background: var(--success-color); color: #fff; }
-        .status-cancelled { background: var(--danger-color); color: #fff; }
 
         .quick-actions {
             background: var(--card-bg);
@@ -583,6 +580,9 @@ $today_revenue = $stmt->fetchColumn() ?: 0;
             </div>
             <div class="admin-info">
                 <span class="admin-name">Welcome, <?php echo htmlspecialchars($_SESSION['admin_first_name'] . ' ' . $_SESSION['admin_last_name']); ?></span>
+                <?php if (!$isSuperAdmin): ?>
+                <a href="../profile/profile.php" class="logout-btn" style="background:#17a2b8;">Profile</a>
+                <?php endif; ?>
                 <?php if ($isSuperAdmin): ?>
                 <a href="../staff/staff.php" class="logout-btn" style="background:#6a1b9a;">Manage Admins</a>
                 <?php endif; ?>
@@ -689,7 +689,7 @@ $today_revenue = $stmt->fetchColumn() ?: 0;
 
                 <a href="../orders/order.php" class="action-btn">
                     <i class="fas fa-shopping-cart"></i>
-                    Manage Orders
+                    View Orders
                 </a>
 
                 <a href="../products/product.php" class="action-btn">
@@ -705,6 +705,11 @@ $today_revenue = $stmt->fetchColumn() ?: 0;
                 <a href="../members/member.php" class="action-btn">
                     <i class="fas fa-users"></i>
                     View Customers
+                </a>
+
+                <a href="../reviews/reviews.php" class="action-btn">
+                    <i class="fas fa-star"></i>
+                    View Reviews
                 </a>
 
                 <a href="../reports/report.php" class="action-btn">

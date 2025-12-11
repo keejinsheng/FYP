@@ -17,9 +17,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $email = sanitize($_POST['email'] ?? '');
         $first_name = sanitize($_POST['first_name'] ?? '');
         $last_name = sanitize($_POST['last_name'] ?? '');
-        $role = strtolower(trim($_POST['role'] ?? 'admin'));
+        $role = 'Staff'; // new admins default to Staff
         $password = $_POST['password'] ?? '';
-        if ($username && $email && $first_name && $password && in_array($role, ['admin','superadmin'], true)) {
+        if ($username && $email && $first_name && !empty($password)) {
             try {
                 $hash = password_hash($password, PASSWORD_BCRYPT);
                 $stmt = $pdo->prepare("INSERT INTO admin_user (username, email, password_hash, first_name, last_name, role, is_active) VALUES (?, ?, ?, ?, ?, ?, 1)");
@@ -36,10 +36,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $email = sanitize($_POST['email'] ?? '');
         $first_name = sanitize($_POST['first_name'] ?? '');
         $last_name = sanitize($_POST['last_name'] ?? '');
-        $role = strtolower(trim($_POST['role'] ?? 'admin'));
+        $role = trim($_POST['role'] ?? 'Staff');
+        $allowedRoles = ['Staff', 'Manager', 'Super Admin'];
         $is_active = (int)($_POST['is_active'] ?? 1) ? 1 : 0;
         $password = $_POST['password'] ?? '';
-        if ($admin_id > 0 && $email && $first_name && in_array($role, ['admin','superadmin'], true)) {
+        if ($admin_id > 0 && $email && $first_name && in_array($role, $allowedRoles, true)) {
             try {
                 if ($password !== '') {
                     $hash = password_hash($password, PASSWORD_BCRYPT);
@@ -59,8 +60,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Fetch admins
-$stmt = $pdo->prepare("SELECT admin_id, username, email, first_name, last_name, role, is_active, created_at FROM admin_user ORDER BY created_at DESC");
+// Fetch admins (exclude Super Admin)
+$stmt = $pdo->prepare("SELECT admin_id, username, email, first_name, last_name, role, is_active, created_at FROM admin_user WHERE role != 'Super Admin' ORDER BY created_at DESC");
 $stmt->execute();
 $admins = $stmt->fetchAll();
 ?>
@@ -73,7 +74,7 @@ $admins = $stmt->fetchAll();
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <style>
         body { font-family: 'Inter', sans-serif; margin:0; background:#1a1a1a; color:#fff; }
         .admin-header { background:#2a2a2a; padding:1rem 2rem; }
@@ -92,8 +93,51 @@ $admins = $stmt->fetchAll();
         .modal { background:#2a2a2a; width:520px; margin:8vh auto; padding:1.2rem 1.4rem; border-radius:10px; }
         .modal label { display:block; margin-top:0.7rem; }
         .modal input, .modal select { width:100%; padding:0.5rem; background:#1a1a1a; color:#fff; border:1px solid #444; border-radius:6px; margin-top:0.3rem; }
+        .modal input[readonly] { background:#2a2a2a; cursor:not-allowed; opacity:0.7; }
         .modal-actions { text-align:right; margin-top:1rem; }
         .btn.secondary { background:#555; }
+        .form-row { display:flex; gap:1.2rem; flex-wrap:wrap; }
+        .form-row > label { flex:1; margin-top:0.7rem; }
+
+        .search-container {
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: flex-end;
+        }
+        .search-box {
+            position: relative;
+            width: 100%;
+            max-width: 320px;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 0.6rem 1rem 0.6rem 2.4rem;
+            border-radius: 8px;
+            border: 1px solid #555;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(255, 75, 43, 0.2);
+        }
+        .search-box i {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #aaa;
+        }
+        .no-results {
+            text-align: center;
+            color: #a0a0a0;
+            padding: 1rem;
+            display: none;
+        }
+        .no-results.show {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -115,9 +159,17 @@ $admins = $stmt->fetchAll();
         <?php if ($success_message): ?><div style="color:#28a745; margin-bottom:1rem;"><?php echo htmlspecialchars($success_message); ?></div><?php endif; ?>
         <?php if ($error_message): ?><div style="color:#dc3545; margin-bottom:1rem;"><?php echo htmlspecialchars($error_message); ?></div><?php endif; ?>
 
-        <table>
+        <div class="search-container">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="adminSearch" placeholder="Search by ID, username, name, or email..." onkeyup="filterAdmins()">
+            </div>
+        </div>
+        <div class="no-results" id="noAdminResults">No admins found.</div>
+        <table id="adminTable">
             <thead>
                 <tr>
+                    <th>Admin ID</th>
                     <th>Username</th>
                     <th>Name</th>
                     <th>Email</th>
@@ -128,7 +180,12 @@ $admins = $stmt->fetchAll();
             </thead>
             <tbody>
                 <?php foreach ($admins as $a): ?>
-                <tr>
+
+                <tr data-admin-id="<?php echo (int)$a['admin_id']; ?>"
+                    data-admin-username="<?php echo htmlspecialchars(strtolower($a['username'])); ?>"
+                    data-admin-name="<?php echo htmlspecialchars(strtolower(trim($a['first_name'] . ' ' . $a['last_name']))); ?>"
+                    data-admin-email="<?php echo htmlspecialchars(strtolower($a['email'])); ?>">
+                    <td><?php echo (int)$a['admin_id']; ?></td>
                     <td><?php echo htmlspecialchars($a['username']); ?></td>
                     <td><?php echo htmlspecialchars($a['first_name'] . ' ' . $a['last_name']); ?></td>
                     <td><?php echo htmlspecialchars($a['email']); ?></td>
@@ -149,36 +206,38 @@ $admins = $stmt->fetchAll();
             <form method="POST" id="adminForm">
                 <input type="hidden" name="action" id="formAction" value="create">
                 <input type="hidden" name="admin_id" id="admin_id">
-                <label>Username
-                    <input type="text" name="username" id="username">
+                <label>Username<span id="usernameRequired" style="color:#dc3545;">*</span>
+                    <input type="text" name="username" id="username" required>
                 </label>
                 <label>Email*
                     <input type="email" name="email" id="email" required>
                 </label>
-                <div style="display:flex; gap:0.7rem;">
-                    <label style="flex:1;">First Name*
+                <div class="form-row">
+                    <label>First Name*
                         <input type="text" name="first_name" id="first_name" required>
                     </label>
-                    <label style="flex:1;">Last Name
+                    <label>Last Name
                         <input type="text" name="last_name" id="last_name">
                     </label>
                 </div>
-                <div style="display:flex; gap:0.7rem;">
-                    <label style="flex:1;">Role*
+                <div class="form-row" id="roleRow">
+                    <label>Role*
                         <select name="role" id="role">
-                            <option value="admin">Admin</option>
-                            <option value="superadmin">Superadmin</option>
+                            <option value="Staff">Staff</option>
+                            <option value="Manager">Manager</option>
+                            <option value="Super Admin">Super Admin</option>
                         </select>
                     </label>
-                    <label style="flex:1;">Active
+                    <label>Active
                         <select name="is_active" id="is_active">
                             <option value="1">Active</option>
                             <option value="0">Disabled</option>
                         </select>
                     </label>
                 </div>
-                <label>Password<?php /* required for create */ ?>
-                    <input type="password" name="password" id="password">
+                <label>Password<span id="passwordRequired" style="color:#dc3545;">*</span>
+                    <input type="password" name="password" id="password" required>
+                    <small style="color:#888; font-size:0.85rem; display:block; margin-top:0.3rem;" id="passwordHint">Leave blank to keep current password (edit mode only)</small>
                 </label>
                 <div class="modal-actions">
                     <button type="button" class="btn secondary" onclick="closeModal()">Cancel</button>
@@ -191,34 +250,105 @@ $admins = $stmt->fetchAll();
     <script>
     const modalBg = document.getElementById('modalBg');
     const form = document.getElementById('adminForm');
+    const roleRow = document.getElementById('roleRow');
+    const roleSelect = document.getElementById('role');
+    const activeSelect = document.getElementById('is_active');
     function openCreate() {
         document.getElementById('modalTitle').innerText = 'New Admin';
         document.getElementById('formAction').value = 'create';
         document.getElementById('admin_id').value = '';
-        document.getElementById('username').value = '';
+        const usernameField = document.getElementById('username');
+        usernameField.value = '';
+        usernameField.removeAttribute('readonly');
+        usernameField.required = true;
+        document.getElementById('usernameRequired').style.display = 'inline';
         document.getElementById('email').value = '';
         document.getElementById('first_name').value = '';
         document.getElementById('last_name').value = '';
-        document.getElementById('role').value = 'admin';
-        document.getElementById('is_active').value = '1';
-        document.getElementById('password').value = '';
+        roleSelect.value = 'Staff';
+        roleSelect.disabled = true;
+        activeSelect.value = '1';
+        activeSelect.disabled = true;
+        const passwordField = document.getElementById('password');
+        passwordField.value = '';
+        passwordField.required = true;
+        document.getElementById('passwordRequired').style.display = 'inline';
+        document.getElementById('passwordHint').style.display = 'none';
+        roleRow.style.display = 'none';
         modalBg.style.display = 'block';
     }
     function openEdit(admin) {
         document.getElementById('modalTitle').innerText = 'Edit Admin';
         document.getElementById('formAction').value = 'update';
         document.getElementById('admin_id').value = admin.admin_id;
-        document.getElementById('username').value = admin.username;
+        const usernameField = document.getElementById('username');
+        usernameField.value = admin.username;
+        usernameField.setAttribute('readonly', 'readonly');
+        usernameField.required = false;
+        document.getElementById('usernameRequired').style.display = 'none';
         document.getElementById('email').value = admin.email;
         document.getElementById('first_name').value = admin.first_name;
         document.getElementById('last_name').value = admin.last_name;
-        document.getElementById('role').value = admin.role;
-        document.getElementById('is_active').value = admin.is_active ? '1' : '0';
-        document.getElementById('password').value = '';
+        roleSelect.value = admin.role;
+        roleSelect.disabled = false;
+        activeSelect.value = admin.is_active ? '1' : '0';
+        activeSelect.disabled = false;
+        const passwordField = document.getElementById('password');
+        passwordField.value = '';
+        passwordField.required = false;
+        document.getElementById('passwordRequired').style.display = 'none';
+        document.getElementById('passwordHint').style.display = 'block';
+        roleRow.style.display = 'flex';
         modalBg.style.display = 'block';
     }
     function closeModal(){ modalBg.style.display = 'none'; }
     modalBg.addEventListener('click', (e)=>{ if(e.target===modalBg) closeModal(); });
+
+    
+    function filterAdmins() {
+        const input = document.getElementById('adminSearch');
+        const filter = input.value.toLowerCase().trim();
+        const table = document.getElementById('adminTable');
+        const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+        const noResults = document.getElementById('noAdminResults');
+        let found = false;
+
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            const adminId = (row.getAttribute('data-admin-id') || '').toLowerCase();
+            const adminUsername = row.getAttribute('data-admin-username') || '';
+            const adminName = row.getAttribute('data-admin-name') || '';
+            const adminEmail = row.getAttribute('data-admin-email') || '';
+            const idPrefix = `admin${adminId}`;
+            const hashId = `#${adminId}`;
+            const idLabel = `id ${adminId}`;
+            const adminIdLabel = `admin id ${adminId}`;
+
+            const searchText = [
+                adminId,
+                adminUsername,
+                adminName,
+                adminEmail,
+                idPrefix,
+                hashId,
+                idLabel,
+                adminIdLabel
+            ].join(' ');
+
+            if (filter === '' || searchText.includes(filter)) {
+                row.style.display = '';
+                found = true;
+            } else {
+                row.style.display = 'none';
+            }
+        }
+
+        if (found || filter === '') {
+            noResults.classList.remove('show');
+        } else {
+            noResults.classList.add('show');
+        }
+    }
     </script>
 </body>
 </html> 

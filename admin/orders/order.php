@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $orderId = (int)($_POST['order_id'] ?? 0);
     $newStatus = trim($_POST['order_status'] ?? '');
     // Allowed statuses (refined)
-    $allowedStatuses = ['Pending', 'Confirmed', 'Delivered', 'Preparing', 'Cancelled'];
+    $allowedStatuses = ['Pending', 'Delivered', 'Preparing'];
     if ($orderId > 0 && in_array($newStatus, $allowedStatuses, true)) {
         $stmt = $pdo->prepare('UPDATE `order` SET order_status = ?, updated_at = NOW() WHERE order_id = ?');
         $stmt->execute([$newStatus, $orderId]);
@@ -42,7 +42,7 @@ $orders = $stmt->fetchAll();
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <style>
         :root {
             --primary-color: #FF4B2B;
@@ -171,11 +171,8 @@ $orders = $stmt->fetchAll();
             display: inline-block;
         }
         .status-pending { background: var(--warning-color); color: #000; }
-        .status-confirmed { background: var(--info-color); color: #fff; }
         .status-preparing { background: #9c27b0; color: #fff; }
-        .status-ready { background: var(--success-color); color: #fff; }
         .status-delivered { background: var(--success-color); color: #fff; }
-        .status-cancelled { background: var(--danger-color); color: #fff; }
         /* Pretty status select */
         .status-select {
             appearance: none;
@@ -191,10 +188,8 @@ $orders = $stmt->fetchAll();
         }
         .status-select:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(255,75,43,.15); }
         .status-select.pending { border-color: var(--warning-color); box-shadow: inset 0 0 0 1px var(--warning-color); }
-        .status-select.confirmed { border-color: var(--info-color); box-shadow: inset 0 0 0 1px var(--info-color); }
         .status-select.preparing { border-color: #9c27b0; box-shadow: inset 0 0 0 1px #9c27b0; }
         .status-select.delivered { border-color: var(--success-color); box-shadow: inset 0 0 0 1px var(--success-color); }
-        .status-select.cancelled { border-color: var(--danger-color); box-shadow: inset 0 0 0 1px var(--danger-color); }
         /* View Details Button */
         .view-details-btn {
             background: var(--gradient-primary);
@@ -494,7 +489,10 @@ $orders = $stmt->fetchAll();
                     <?php foreach ($orders as $order): ?>
                     <tr data-order-id="<?php echo (int)$order['order_id']; ?>" 
                         data-order-number="<?php echo htmlspecialchars(strtolower($order['order_number'])); ?>" 
-                        data-customer-name="<?php echo htmlspecialchars(strtolower($order['first_name'] . ' ' . $order['last_name'])); ?>">
+                        data-customer-name="<?php echo htmlspecialchars(strtolower($order['first_name'] . ' ' . $order['last_name'])); ?>"
+                        data-order-email="<?php echo htmlspecialchars(strtolower($order['email'])); ?>">
+                        data-customer-name="<?php echo htmlspecialchars(strtolower($order['first_name'] . ' ' . $order['last_name'])); ?>"
+                        data-order-email="<?php echo htmlspecialchars(strtolower($order['email'])); ?>">
                             <td><?php echo (int)$order['order_id']; ?></td>
                             <td><?php echo htmlspecialchars($order['order_number']); ?></td>
                             <td><?php echo htmlspecialchars($order['first_name'] . ' ' . $order['last_name']); ?><br><span style="color: var(--text-gray); font-size: 0.9em;">(<?php echo htmlspecialchars($order['email']); ?>)</span></td>
@@ -504,7 +502,7 @@ $orders = $stmt->fetchAll();
                                 <input type="hidden" name="order_id" value="<?php echo (int)$order['order_id']; ?>">
                                 <select name="order_status" class="status-select" data-status-select>
                                     <?php
-                                        $statuses = ['Pending','Confirmed','Delivered','Preparing','Cancelled'];
+                                        $statuses = ['Pending','Preparing','Delivered'];
                                         foreach ($statuses as $status) {
                                             $selected = $status === $order['order_status'] ? 'selected' : '';
                                             echo '<option value="' . htmlspecialchars($status) . '" ' . $selected . '>' . htmlspecialchars($status) . '</option>';
@@ -745,7 +743,8 @@ $orders = $stmt->fetchAll();
         // Search functionality
         function filterOrders() {
             const input = document.getElementById('orderSearch');
-            const filter = input.value.toLowerCase();
+            const filter = input.value.toLowerCase().trim();
+            const filter = input.value.toLowerCase().trim();
             const table = document.getElementById('ordersTable');
             const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
             const noResults = document.getElementById('noResults');
@@ -753,11 +752,29 @@ $orders = $stmt->fetchAll();
 
             for (let i = 0; i < rows.length; i++) {
                 const row = rows[i];
-                const orderId = row.getAttribute('data-order-id') || '';
+                const orderId = (row.getAttribute('data-order-id') || '').toLowerCase();
                 const orderNumber = row.getAttribute('data-order-number') || '';
                 const customerName = row.getAttribute('data-customer-name') || '';
+                const orderEmail = row.getAttribute('data-order-email') || '';
+                const orderIdText = `order${orderId}`;
+                const hashIdText = `#${orderId}`;
+                const orderIdWithSpace = `order ${orderId}`;
+                const orderIdLabel = `order id ${orderId}`;
+                const plainIdLabel = `id ${orderId}`;
+                const idCompact = `id${orderId}`;
                 
-                const searchText = orderId + ' ' + orderNumber + ' ' + customerName;
+                const searchText = [
+                    orderId,
+                    orderNumber,
+                    customerName,
+                    orderEmail,
+                    orderIdText,
+                    hashIdText,
+                    orderIdWithSpace,
+                    orderIdLabel,
+                    plainIdLabel,
+                    idCompact
+                ].join(' ');
                 
                 if (searchText.includes(filter)) {
                     row.style.display = '';

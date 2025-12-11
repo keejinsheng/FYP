@@ -10,19 +10,98 @@ if (!isLoggedIn()) {
 $pdo = getDBConnection();
 $user_id = getCurrentUserId();
 
+// Function to handle avatar upload
+function handleAvatarUpload($fileInput, $oldImage = null) {
+    if (isset($_FILES[$fileInput]) && $_FILES[$fileInput]['error'] === UPLOAD_ERR_OK) {
+        $ext = strtolower(pathinfo($_FILES[$fileInput]['name'], PATHINFO_EXTENSION));
+        $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        if (!in_array($ext, $allowed)) {
+            return ['error' => 'Invalid file type. Only JPG, PNG, GIF, and WEBP are allowed.'];
+        }
+        
+        // Check file size (max 5MB)
+        if ($_FILES[$fileInput]['size'] > 5 * 1024 * 1024) {
+            return ['error' => 'File size exceeds 5MB limit.'];
+        }
+        
+        // Create upload directory if it doesn't exist
+        $uploadDir = __DIR__ . '/../../uploads/avatars/';
+        if (!file_exists($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+        
+        // Generate unique filename
+        $newName = 'avatar_' . uniqid() . '_' . time() . '.' . $ext;
+        $dest = $uploadDir . $newName;
+        
+        if (move_uploaded_file($_FILES[$fileInput]['tmp_name'], $dest)) {
+            // Delete old avatar if it's not the default one
+            if ($oldImage && $oldImage !== 'user.jpg' && file_exists($uploadDir . $oldImage)) {
+                @unlink($uploadDir . $oldImage);
+            }
+            return ['success' => $newName];
+        } else {
+            return ['error' => 'Failed to upload file.'];
+        }
+    }
+    return ['success' => $oldImage];
+}
+
 // Handle profile update
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action'])) {
         switch ($_POST['action']) {
             case 'update_profile':
-                $first_name = sanitize($_POST['first_name']);
-                $last_name = sanitize($_POST['last_name']);
+                $username = sanitize($_POST['username'] ?? '');
+                $full_name = sanitize($_POST['full_name'] ?? '');
                 $email = sanitize($_POST['email']);
                 $phone = sanitize($_POST['phone']);
+                $date_of_birth = $_POST['date_of_birth'] ?? null;
                 
-                $stmt = $pdo->prepare("UPDATE user SET first_name = ?, last_name = ?, email = ?, phone = ? WHERE user_id = ?");
-                if ($stmt->execute([$first_name, $last_name, $email, $phone, $user_id])) {
+                // Split full_name into first_name and last_name
+                $name_parts = explode(' ', trim($full_name), 2);
+                $first_name = $name_parts[0] ?? '';
+                $last_name = $name_parts[1] ?? '';
+                
+                // Get current user data
+                $stmt = $pdo->prepare("SELECT username, profile_image FROM user WHERE user_id = ?");
+                $stmt->execute([$user_id]);
+                $current_user = $stmt->fetch();
+                $current_username = $current_user['username'] ?? '';
+                $current_avatar = $current_user['profile_image'] ?? 'user.jpg';
+                
+                // Validate username
+                if (empty($username)) {
+                    $error_message = "Username cannot be empty!";
+                    break;
+                }
+                
+                // Check if username is being changed and if it already exists
+                if ($username !== $current_username) {
+                    $stmt = $pdo->prepare("SELECT user_id FROM user WHERE username = ? AND user_id != ?");
+                    $stmt->execute([$username, $user_id]);
+                    if ($stmt->fetch()) {
+                        $error_message = "Username already exists. Please choose a different username.";
+                        break;
+                    }
+                }
+                
+                // Handle avatar upload
+                $avatar_result = handleAvatarUpload('avatar', $current_avatar);
+                if (isset($avatar_result['error'])) {
+                    $error_message = $avatar_result['error'];
+                    break;
+                }
+                $profile_image = $avatar_result['success'];
+                
+                // Update profile
+                $stmt = $pdo->prepare("UPDATE user SET username = ?, first_name = ?, last_name = ?, email = ?, phone = ?, date_of_birth = ?, profile_image = ? WHERE user_id = ?");
+                if ($stmt->execute([$username, $first_name, $last_name, $email, $phone, $date_of_birth ?: null, $profile_image, $user_id])) {
                     $success_message = "Profile updated successfully!";
+                    // Update session username if changed
+                    if ($username !== $current_username) {
+                        $_SESSION['username'] = $username;
+                    }
                 } else {
                     $error_message = "Error updating profile.";
                 }
@@ -95,7 +174,11 @@ case 'change_password':
     } elseif ($new_password !== $confirm_password) {
         $error_message = "New password and confirmation password do not match!";
     } elseif (strlen($new_password) < 6) {
-        $error_message = "New password must be at least 6 characters long!";
+        $error_message = "Password must be at least 6 characters long";
+    } elseif (!preg_match('/[a-zA-Z]/', $new_password)) {
+        $error_message = "Password must contain at least one letter";
+    } elseif (!preg_match('/[0-9]/', $new_password)) {
+        $error_message = "Password must contain at least one number";
     } else {
         try {
             // 先检查用户是否存在
@@ -148,19 +231,6 @@ $user = $stmt->fetch();
 $stmt = $pdo->prepare("SELECT * FROM delivery_address WHERE user_id = ? ORDER BY is_default DESC, created_at DESC");
 $stmt->execute([$user_id]);
 $addresses = $stmt->fetchAll();
-
-// Get user's recent orders
-$stmt = $pdo->prepare("
-    SELECT o.*, COUNT(oi.item_id) as item_count 
-    FROM `order` o 
-    LEFT JOIN order_item oi ON o.order_id = oi.order_id 
-    WHERE o.user_id = ? 
-    GROUP BY o.order_id 
-    ORDER BY o.created_at DESC 
-    LIMIT 10
-");
-$stmt->execute([$user_id]);
-$recent_orders = $stmt->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -196,15 +266,45 @@ $recent_orders = $stmt->fetchAll();
             <!-- Personal Information -->
             <div class="profile-section">
                 <h2><i class="fas fa-user"></i> Personal Information</h2>
-                <form method="POST">
+                
+                <!-- Avatar Display and Upload -->
+                <div class="avatar-section">
+                    <?php 
+                    $avatar_path = '';
+                    $has_avatar = false;
+                    if (!empty($user['profile_image']) && $user['profile_image'] !== 'user.jpg') {
+                        $avatar_path = '../../uploads/avatars/' . $user['profile_image'];
+                        if (file_exists(__DIR__ . '/../../uploads/avatars/' . $user['profile_image'])) {
+                            $has_avatar = true;
+                        }
+                    }
+                    ?>
+                    <div class="avatar-wrapper">
+                        <div class="avatar-preview">
+                            <?php if ($has_avatar): ?>
+                                <img src="<?php echo $avatar_path; ?>" alt="Profile Avatar" id="avatarPreview" class="avatar-image">
+                            <?php else: ?>
+                                <div class="avatar-placeholder" id="avatarPreview">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                        <button type="button" class="submit-btn avatar-change-button" onclick="document.getElementById('avatar').click()" style="width: 100%; max-width: 280px; font-weight: 700;">
+                            <i class="fas fa-camera"></i> Change Photo
+                        </button>
+                    </div>
+                </div>
+                
+                <form method="POST" enctype="multipart/form-data">
                     <input type="hidden" name="action" value="update_profile">
-                    <div class="form-group">
-                        <label for="first_name">First Name</label>
-                        <input type="text" id="first_name" name="first_name" value="<?php echo htmlspecialchars($user['first_name']); ?>" required>
+                    <input type="file" id="avatar" name="avatar" accept="image/*" style="display: none;" onchange="previewAvatar(this)">
+                    <div class="form-group" style="margin-top: 1.5rem;">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" name="username" value="<?php echo htmlspecialchars($user['username']); ?>" required>
                     </div>
                     <div class="form-group">
-                        <label for="last_name">Last Name</label>
-                        <input type="text" id="last_name" name="last_name" value="<?php echo htmlspecialchars($user['last_name']); ?>" required>
+                        <label for="full_name">Full Name</label>
+                        <input type="text" id="full_name" name="full_name" value="<?php echo htmlspecialchars(trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? ''))); ?>" required>
                     </div>
                     <div class="form-group">
                         <label for="email">Email</label>
@@ -214,11 +314,15 @@ $recent_orders = $stmt->fetchAll();
                         <label for="phone">Phone</label>
                         <input type="tel" id="phone" name="phone" value="<?php echo htmlspecialchars($user['phone']); ?>">
                     </div>
+                    <div class="form-group">
+                        <label for="date_of_birth">Date of Birth</label>
+                        <input type="date" id="date_of_birth" name="date_of_birth" value="<?php echo htmlspecialchars($user['date_of_birth'] ?? ''); ?>">
+                    </div>
                     <button type="submit" class="submit-btn">Update Profile</button>
                 </form>
                    <!-- 添加修改密码部分 -->
-<div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #eee;">
-    <h3><i class="fas fa-lock"></i> Change Password</h3>
+<div class="change-password-section" style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #eee;">
+    <h3 class="change-password-heading"><i class="fas fa-lock"></i> Change Password</h3>
     <form method="POST" id="changePasswordForm">
         <input type="hidden" name="action" value="change_password">
         <div class="form-group">
@@ -228,10 +332,34 @@ $recent_orders = $stmt->fetchAll();
         <div class="form-group">
             <label for="new_password">New Password</label>
             <input type="password" id="new_password" name="new_password" required minlength="6">
+            <div class="password-strength-container">
+                <div class="password-strength-bar">
+                    <div class="password-strength-segment" id="strength-seg-1"></div>
+                    <div class="password-strength-segment" id="strength-seg-2"></div>
+                    <div class="password-strength-segment" id="strength-seg-3"></div>
+                    <div class="password-strength-segment" id="strength-seg-4"></div>
+                </div>
+                <div class="password-strength-text empty" id="strength-text"></div>
+                <div class="password-requirements">
+                    <div class="requirement invalid" id="req-length">
+                        <span>✓</span>
+                        <span>At least 6 characters</span>
+                    </div>
+                    <div class="requirement invalid" id="req-letter">
+                        <span>✓</span>
+                        <span>Contains at least one letter</span>
+                    </div>
+                    <div class="requirement invalid" id="req-number">
+                        <span>✓</span>
+                        <span>Contains at least one number</span>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="form-group">
             <label for="confirm_password">Confirm New Password</label>
             <input type="password" id="confirm_password" name="confirm_password" required minlength="6">
+            <div id="passwordMatchMessage" class="password-match-message" style="display: none; margin-top: 0.5rem; font-size: 0.9rem;"></div>
         </div>
         <button type="submit" class="submit-btn" style="background-color: #28a745;">Change Password</button>
     </form>
@@ -275,33 +403,6 @@ $recent_orders = $stmt->fetchAll();
                 <?php endif; ?>
                 <button class="submit-btn" onclick="showAddAddressForm()">Add New Address</button>
             </div>
-        </div>
-
-        <!-- Recent Orders -->
-        <div class="profile-section" style="margin-top: 2rem;">
-            <h2><i class="fas fa-shopping-bag"></i> Recent Orders</h2>
-            <?php if (empty($recent_orders)): ?>
-                <p style="color: var(--text-gray);">No orders yet. <a href="../index/index.php" style="color: var(--primary-color);">Start shopping!</a></p>
-            <?php else: ?>
-                <?php foreach ($recent_orders as $order): ?>
-                    <div class="order-item">
-                        <div class="order-header">
-                            <span class="order-number">Order #<?php echo htmlspecialchars($order['order_number']); ?></span>
-                            <span class="order-status status-<?php echo strtolower($order['order_status']); ?>">
-                                <?php echo htmlspecialchars($order['order_status']); ?>
-                            </span>
-                        </div>
-                        <div class="order-details">
-                            <p>Date: <?php echo date('M j, Y', strtotime($order['created_at'])); ?></p>
-                            <p>Items: <?php echo $order['item_count']; ?></p>
-                            <p>Type: <?php echo htmlspecialchars($order['order_type']); ?></p>
-                        </div>
-                        <div class="order-total">
-                            Total: RM <?php echo number_format($order['total_amount'], 2); ?>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            <?php endif; ?>
         </div>
     </div>
 
@@ -477,6 +578,168 @@ $recent_orders = $stmt->fetchAll();
         // Initial bind
         syncDefaultButtons();
 
+// ====== Password Strength Indicator ======
+(function() {
+    const passwordInput = document.getElementById('new_password');
+    if (!passwordInput) return;
+    
+    const strengthSegments = [
+        document.getElementById('strength-seg-1'),
+        document.getElementById('strength-seg-2'),
+        document.getElementById('strength-seg-3'),
+        document.getElementById('strength-seg-4')
+    ];
+    const strengthText = document.getElementById('strength-text');
+    const reqLength = document.getElementById('req-length');
+    const reqLetter = document.getElementById('req-letter');
+    const reqNumber = document.getElementById('req-number');
+
+    function checkPasswordStrength(password) {
+        let strength = 0;
+        let strengthLevel = 'empty';
+        let strengthLabel = '';
+
+        // 检查各项要求
+        const hasLength = password.length >= 6;
+        const hasLetter = /[a-zA-Z]/.test(password);
+        const hasNumber = /[0-9]/.test(password);
+
+        // 更新要求指示器
+        if (hasLength) {
+            reqLength.classList.remove('invalid');
+            reqLength.classList.add('valid');
+        } else {
+            reqLength.classList.remove('valid');
+            reqLength.classList.add('invalid');
+        }
+
+        if (hasLetter) {
+            reqLetter.classList.remove('invalid');
+            reqLetter.classList.add('valid');
+        } else {
+            reqLetter.classList.remove('valid');
+            reqLetter.classList.add('invalid');
+        }
+
+        if (hasNumber) {
+            reqNumber.classList.remove('invalid');
+            reqNumber.classList.add('valid');
+        } else {
+            reqNumber.classList.remove('valid');
+            reqNumber.classList.add('invalid');
+        }
+
+        if (password.length === 0) {
+            strengthLevel = 'empty';
+            strengthLabel = '';
+        } else {
+            // 长度检查
+            if (password.length >= 8) {
+                strength += 1;
+            } else if (password.length >= 6) {
+                strength += 0.5;
+            }
+
+            // 包含小写字母
+            if (/[a-z]/.test(password)) {
+                strength += 1;
+            }
+
+            // 包含大写字母
+            if (/[A-Z]/.test(password)) {
+                strength += 1;
+            }
+
+            // 包含数字
+            if (/[0-9]/.test(password)) {
+                strength += 1;
+            }
+
+            // 包含特殊字符
+            if (/[^a-zA-Z0-9]/.test(password)) {
+                strength += 1;
+            }
+
+            // 确定强度等级
+            if (strength <= 2) {
+                strengthLevel = 'weak';
+                strengthLabel = 'weak';
+            } else if (strength <= 3.5) {
+                strengthLevel = 'medium';
+                strengthLabel = 'medium';
+            } else {
+                strengthLevel = 'strong';
+                strengthLabel = 'strong';
+            }
+        }
+
+        // 更新强度条
+        strengthSegments.forEach((seg, index) => {
+            seg.classList.remove('weak', 'medium', 'strong');
+            if (strengthLevel === 'empty') {
+                // 不显示任何颜色
+            } else if (strengthLevel === 'weak') {
+                if (index === 0) {
+                    seg.classList.add('weak');
+                }
+            } else if (strengthLevel === 'medium') {
+                if (index <= 1) {
+                    seg.classList.add('medium');
+                }
+            } else if (strengthLevel === 'strong') {
+                seg.classList.add('strong');
+            }
+        });
+
+        // 更新文字
+        strengthText.textContent = strengthLabel;
+        strengthText.className = 'password-strength-text ' + strengthLevel;
+    }
+
+    passwordInput.addEventListener('input', function() {
+        checkPasswordStrength(this.value);
+    });
+
+    // 初始化
+    checkPasswordStrength(passwordInput.value);
+})();
+
+// 实时密码匹配验证
+function checkPasswordMatch() {
+    const newPassword = document.getElementById('new_password').value;
+    const confirmPassword = document.getElementById('confirm_password').value;
+    const messageDiv = document.getElementById('passwordMatchMessage');
+    const confirmInput = document.getElementById('confirm_password');
+    
+    if (confirmPassword.length === 0) {
+        messageDiv.style.display = 'none';
+        confirmInput.style.borderColor = '#ccc';
+        return;
+    }
+    
+    if (newPassword.length === 0) {
+        messageDiv.style.display = 'none';
+        confirmInput.style.borderColor = '#ccc';
+        return;
+    }
+    
+    messageDiv.style.display = 'block';
+    
+    if (newPassword === confirmPassword) {
+        messageDiv.textContent = '✓ Passwords match';
+        messageDiv.className = 'password-match-message password-match-success';
+        confirmInput.style.borderColor = '#28a745';
+    } else {
+        messageDiv.textContent = '✗ Passwords do not match';
+        messageDiv.className = 'password-match-message password-match-error';
+        confirmInput.style.borderColor = '#dc3545';
+    }
+}
+
+// 监听新密码和确认密码输入
+document.getElementById('new_password')?.addEventListener('input', checkPasswordMatch);
+document.getElementById('confirm_password')?.addEventListener('input', checkPasswordMatch);
+
 // 密码表单验证
 document.getElementById('changePasswordForm')?.addEventListener('submit', function(e) {
     const newPassword = document.getElementById('new_password').value;
@@ -494,6 +757,29 @@ document.getElementById('changePasswordForm')?.addEventListener('submit', functi
         return false;
     }
 });
+
+// Avatar preview function
+function previewAvatar(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById('avatarPreview');
+            // Check if it's an image or placeholder div
+            if (preview.tagName === 'IMG') {
+                preview.src = e.target.result;
+            } else {
+                // Replace placeholder with image
+                const img = document.createElement('img');
+                img.id = 'avatarPreview';
+                img.className = 'avatar-image';
+                img.src = e.target.result;
+                img.alt = 'Profile Avatar';
+                preview.parentNode.replaceChild(img, preview);
+            }
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
 </script>
 </body>
 </html>
