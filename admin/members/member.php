@@ -22,7 +22,7 @@ $customers = $stmt->fetchAll();
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <style>
         :root {
             --primary-color: #FF4B2B;
@@ -455,7 +455,8 @@ $customers = $stmt->fetchAll();
                 <tbody>
                     <?php foreach ($customers as $c): ?>
                         <tr data-customer-id="<?php echo (int)$c['user_id']; ?>" 
-                            data-customer-name="<?php echo htmlspecialchars(strtolower($c['first_name'] . ' ' . $c['last_name'])); ?>">
+                            data-customer-name="<?php echo htmlspecialchars(strtolower($c['first_name'] . ' ' . $c['last_name'])); ?>"
+                            data-customer-email="<?php echo htmlspecialchars(strtolower($c['email'])); ?>">
                             <td><?php echo (int)$c['user_id']; ?></td>
                             <td><?php echo htmlspecialchars($c['first_name'] . ' ' . $c['last_name']); ?></td>
                             <td><?php echo htmlspecialchars($c['email']); ?></td>
@@ -724,7 +725,7 @@ $customers = $stmt->fetchAll();
         // Search functionality
         function filterCustomers() {
             const input = document.getElementById('customerSearch');
-            const filter = input.value.toLowerCase();
+            const filter = input.value.toLowerCase().trim();
             const table = document.getElementById('customersTable');
             const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
             const noResults = document.getElementById('noResults');
@@ -732,10 +733,27 @@ $customers = $stmt->fetchAll();
 
             for (let i = 0; i < rows.length; i++) {
                 const row = rows[i];
-                const customerId = row.getAttribute('data-customer-id') || '';
+                const customerId = (row.getAttribute('data-customer-id') || '').toLowerCase();
                 const customerName = row.getAttribute('data-customer-name') || '';
+                const customerEmail = row.getAttribute('data-customer-email') || '';
+                const prefixedId = `customer${customerId}`;
+                const hashId = `#${customerId}`;
+                const customerIdWithSpace = `customer ${customerId}`;
+                const customerIdLabel = `customer id ${customerId}`;
+                const idLabel = `id ${customerId}`;
+                const idCompact = `id${customerId}`;
                 
-                const searchText = customerId + ' ' + customerName;
+                const searchText = [
+                    customerId,
+                    customerName,
+                    customerEmail,
+                    prefixedId,
+                    hashId,
+                    customerIdWithSpace,
+                    customerIdLabel,
+                    idLabel,
+                    idCompact
+                ].join(' ');
                 
                 if (searchText.includes(filter)) {
                     row.style.display = '';

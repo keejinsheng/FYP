@@ -58,11 +58,10 @@ foreach ($categories as $cat) {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         :root {
             --primary-color: #FF4B2B;
@@ -210,7 +209,6 @@ foreach ($categories as $cat) {
             <div style="display:flex;gap:0.5rem;align-items:center;">
                 <button id="btnExportPdf" class="back-btn" style="background:#2e7d32;"><i class="fas fa-file-pdf"></i> Export Charts PDF</button>
                 <button id="btnExportTablesPdf" class="back-btn" style="background:#6a1b9a;"><i class="fas fa-table"></i> Export Tables PDF</button>
-                <button id="btnExportExcel" class="back-btn" style="background:#1e88e5;"><i class="fas fa-file-excel"></i> Export Tables Excel</button>
                 <a href="../dashboard/dashboard.php" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
             </div>
         </div>
@@ -269,7 +267,6 @@ foreach ($categories as $cat) {
     document.addEventListener('DOMContentLoaded', function () {
         const btnPdf = document.getElementById('btnExportPdf');
         const btnTablesPdf = document.getElementById('btnExportTablesPdf');
-        const btnExcel = document.getElementById('btnExportExcel');
         if (btnPdf) {
             btnPdf.addEventListener('click', async function() {
                 const { jsPDF } = window.jspdf || {};
@@ -456,27 +453,6 @@ foreach ($categories as $cat) {
                 }
 
                 pdf.save('spice_fusion_tables_' + new Date().toISOString().slice(0,10) + '.pdf');
-            });
-        }
-
-        // Export all tables to an Excel workbook (one sheet per category)
-        if (btnExcel) {
-            btnExcel.addEventListener('click', function() {
-                if (!window.XLSX) return alert('Excel library failed to load.');
-                const wb = XLSX.utils.book_new();
-                const sections = Array.from(document.querySelectorAll('.category-section'));
-                if (sections.length === 0) return alert('No tables to export.');
-                sections.forEach((section, idx) => {
-                    const titleEl = section.querySelector('.category-title');
-                    const tableEl = section.querySelector('table');
-                    if (!tableEl) return;
-                    const ws = XLSX.utils.table_to_sheet(tableEl, { raw: true });
-                    let name = (titleEl ? titleEl.textContent.trim() : 'Sheet ' + (idx+1));
-                    name = name.replace(/[\[\]:\*\?\/\\]/g, ' ');
-                    if (name.length > 31) name = name.slice(0, 31);
-                    XLSX.utils.book_append_sheet(wb, ws, name || ('Sheet' + (idx+1)));
-                });
-                XLSX.writeFile(wb, 'tables_report.xlsx');
             });
         }
     });
