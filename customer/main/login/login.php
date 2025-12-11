@@ -6,16 +6,16 @@ $error_message = '';
 $success_message = '';
 
 // Handle login form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login_input'], $_POST['password']) && !isset($_POST['step'])) {
-    $login_input = sanitize($_POST['login_input'] ?? '');
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'], $_POST['password']) && !isset($_POST['step'])) {
+    $email = sanitize($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
-    if (empty($login_input) || empty($password)) {
+    if (empty($email) || empty($password)) {
         $error_message = 'Please fill in all fields';
     } else {
         try {
             $pdo = getDBConnection();
-            $stmt = $pdo->prepare("SELECT user_id, username, email, password_hash, first_name, last_name FROM user WHERE (email = ? OR username = ?) AND is_active = 1");
-            $stmt->execute([$login_input, $login_input]);
+            $stmt = $pdo->prepare("SELECT user_id, username, email, password_hash, first_name, last_name FROM user WHERE email = ? AND is_active = 1");
+            $stmt->execute([$email]);
             $user = $stmt->fetch();
             if ($user && password_verify($password, $user['password_hash'])) {
                 $_SESSION['user_id'] = $user['user_id'];
@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login_input'], $_POST
                 $_SESSION['last_name'] = $user['last_name'];
                 redirect('../index/index.php');
             } else {
-                $error_message = 'Invalid email/username or password';
+                $error_message = 'Invalid email or password';
             }
         } catch (Exception $e) {
             $error_message = 'Login failed. Please try again.';
@@ -223,8 +223,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login_input'], $_POST
 
             <form method="POST" action="">
                 <div class="form-group">
-                    <label for="login_input">Email or Username</label>
-                    <input type="text" id="login_input" name="login_input" required value="<?php echo htmlspecialchars($_POST['login_input'] ?? ''); ?>">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" required value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>">
                 </div>
 
                 <div class="form-group">
