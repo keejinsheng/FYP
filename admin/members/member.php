@@ -1,7 +1,7 @@
 <?php
 require_once '../../config/database.php';
 
-// 检查是否已登录为管理员..
+// 检查是否已登录为管理员
 if (!isAdmin()) {
     redirect('../auth/login.php');
 }
