@@ -174,7 +174,11 @@ case 'change_password':
     } elseif ($new_password !== $confirm_password) {
         $error_message = "New password and confirmation password do not match!";
     } elseif (strlen($new_password) < 6) {
-        $error_message = "New password must be at least 6 characters long!";
+        $error_message = "Password must be at least 6 characters long";
+    } elseif (!preg_match('/[a-zA-Z]/', $new_password)) {
+        $error_message = "Password must contain at least one letter";
+    } elseif (!preg_match('/[0-9]/', $new_password)) {
+        $error_message = "Password must contain at least one number";
     } else {
         try {
             // 先检查用户是否存在
@@ -317,8 +321,8 @@ $addresses = $stmt->fetchAll();
                     <button type="submit" class="submit-btn">Update Profile</button>
                 </form>
                    <!-- 添加修改密码部分 -->
-<div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #eee;">
-    <h3><i class="fas fa-lock"></i> Change Password</h3>
+<div class="change-password-section" style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #eee;">
+    <h3 class="change-password-heading"><i class="fas fa-lock"></i> Change Password</h3>
     <form method="POST" id="changePasswordForm">
         <input type="hidden" name="action" value="change_password">
         <div class="form-group">
@@ -328,10 +332,34 @@ $addresses = $stmt->fetchAll();
         <div class="form-group">
             <label for="new_password">New Password</label>
             <input type="password" id="new_password" name="new_password" required minlength="6">
+            <div class="password-strength-container">
+                <div class="password-strength-bar">
+                    <div class="password-strength-segment" id="strength-seg-1"></div>
+                    <div class="password-strength-segment" id="strength-seg-2"></div>
+                    <div class="password-strength-segment" id="strength-seg-3"></div>
+                    <div class="password-strength-segment" id="strength-seg-4"></div>
+                </div>
+                <div class="password-strength-text empty" id="strength-text"></div>
+                <div class="password-requirements">
+                    <div class="requirement invalid" id="req-length">
+                        <span>✓</span>
+                        <span>At least 6 characters</span>
+                    </div>
+                    <div class="requirement invalid" id="req-letter">
+                        <span>✓</span>
+                        <span>Contains at least one letter</span>
+                    </div>
+                    <div class="requirement invalid" id="req-number">
+                        <span>✓</span>
+                        <span>Contains at least one number</span>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="form-group">
             <label for="confirm_password">Confirm New Password</label>
             <input type="password" id="confirm_password" name="confirm_password" required minlength="6">
+            <div id="passwordMatchMessage" class="password-match-message" style="display: none; margin-top: 0.5rem; font-size: 0.9rem;"></div>
         </div>
         <button type="submit" class="submit-btn" style="background-color: #28a745;">Change Password</button>
     </form>
@@ -549,6 +577,168 @@ $addresses = $stmt->fetchAll();
 
         // Initial bind
         syncDefaultButtons();
+
+// ====== Password Strength Indicator ======
+(function() {
+    const passwordInput = document.getElementById('new_password');
+    if (!passwordInput) return;
+    
+    const strengthSegments = [
+        document.getElementById('strength-seg-1'),
+        document.getElementById('strength-seg-2'),
+        document.getElementById('strength-seg-3'),
+        document.getElementById('strength-seg-4')
+    ];
+    const strengthText = document.getElementById('strength-text');
+    const reqLength = document.getElementById('req-length');
+    const reqLetter = document.getElementById('req-letter');
+    const reqNumber = document.getElementById('req-number');
+
+    function checkPasswordStrength(password) {
+        let strength = 0;
+        let strengthLevel = 'empty';
+        let strengthLabel = '';
+
+        // 检查各项要求
+        const hasLength = password.length >= 6;
+        const hasLetter = /[a-zA-Z]/.test(password);
+        const hasNumber = /[0-9]/.test(password);
+
+        // 更新要求指示器
+        if (hasLength) {
+            reqLength.classList.remove('invalid');
+            reqLength.classList.add('valid');
+        } else {
+            reqLength.classList.remove('valid');
+            reqLength.classList.add('invalid');
+        }
+
+        if (hasLetter) {
+            reqLetter.classList.remove('invalid');
+            reqLetter.classList.add('valid');
+        } else {
+            reqLetter.classList.remove('valid');
+            reqLetter.classList.add('invalid');
+        }
+
+        if (hasNumber) {
+            reqNumber.classList.remove('invalid');
+            reqNumber.classList.add('valid');
+        } else {
+            reqNumber.classList.remove('valid');
+            reqNumber.classList.add('invalid');
+        }
+
+        if (password.length === 0) {
+            strengthLevel = 'empty';
+            strengthLabel = '';
+        } else {
+            // 长度检查
+            if (password.length >= 8) {
+                strength += 1;
+            } else if (password.length >= 6) {
+                strength += 0.5;
+            }
+
+            // 包含小写字母
+            if (/[a-z]/.test(password)) {
+                strength += 1;
+            }
+
+            // 包含大写字母
+            if (/[A-Z]/.test(password)) {
+                strength += 1;
+            }
+
+            // 包含数字
+            if (/[0-9]/.test(password)) {
+                strength += 1;
+            }
+
+            // 包含特殊字符
+            if (/[^a-zA-Z0-9]/.test(password)) {
+                strength += 1;
+            }
+
+            // 确定强度等级
+            if (strength <= 2) {
+                strengthLevel = 'weak';
+                strengthLabel = 'weak';
+            } else if (strength <= 3.5) {
+                strengthLevel = 'medium';
+                strengthLabel = 'medium';
+            } else {
+                strengthLevel = 'strong';
+                strengthLabel = 'strong';
+            }
+        }
+
+        // 更新强度条
+        strengthSegments.forEach((seg, index) => {
+            seg.classList.remove('weak', 'medium', 'strong');
+            if (strengthLevel === 'empty') {
+                // 不显示任何颜色
+            } else if (strengthLevel === 'weak') {
+                if (index === 0) {
+                    seg.classList.add('weak');
+                }
+            } else if (strengthLevel === 'medium') {
+                if (index <= 1) {
+                    seg.classList.add('medium');
+                }
+            } else if (strengthLevel === 'strong') {
+                seg.classList.add('strong');
+            }
+        });
+
+        // 更新文字
+        strengthText.textContent = strengthLabel;
+        strengthText.className = 'password-strength-text ' + strengthLevel;
+    }
+
+    passwordInput.addEventListener('input', function() {
+        checkPasswordStrength(this.value);
+    });
+
+    // 初始化
+    checkPasswordStrength(passwordInput.value);
+})();
+
+// 实时密码匹配验证
+function checkPasswordMatch() {
+    const newPassword = document.getElementById('new_password').value;
+    const confirmPassword = document.getElementById('confirm_password').value;
+    const messageDiv = document.getElementById('passwordMatchMessage');
+    const confirmInput = document.getElementById('confirm_password');
+    
+    if (confirmPassword.length === 0) {
+        messageDiv.style.display = 'none';
+        confirmInput.style.borderColor = '#ccc';
+        return;
+    }
+    
+    if (newPassword.length === 0) {
+        messageDiv.style.display = 'none';
+        confirmInput.style.borderColor = '#ccc';
+        return;
+    }
+    
+    messageDiv.style.display = 'block';
+    
+    if (newPassword === confirmPassword) {
+        messageDiv.textContent = '✓ Passwords match';
+        messageDiv.className = 'password-match-message password-match-success';
+        confirmInput.style.borderColor = '#28a745';
+    } else {
+        messageDiv.textContent = '✗ Passwords do not match';
+        messageDiv.className = 'password-match-message password-match-error';
+        confirmInput.style.borderColor = '#dc3545';
+    }
+}
+
+// 监听新密码和确认密码输入
+document.getElementById('new_password')?.addEventListener('input', checkPasswordMatch);
+document.getElementById('confirm_password')?.addEventListener('input', checkPasswordMatch);
 
 // 密码表单验证
 document.getElementById('changePasswordForm')?.addEventListener('submit', function(e) {

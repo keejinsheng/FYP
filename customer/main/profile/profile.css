@@ -544,3 +544,152 @@ body.modal-open { overflow: hidden; }
 .form-group.default-checkbox input[type="checkbox"]:checked::after {
     transform: translateX(18px);
 }
+
+/* Password Match Validation Styles */
+.password-match-message {
+    padding: 0.5rem;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.password-match-success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.password-match-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+/* ====== Password Strength Indicator ====== */
+.password-strength-container {
+    margin-top: 0.5rem;
+}
+
+.password-strength-bar {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 0.5rem;
+}
+
+.password-strength-segment {
+    flex: 1;
+    height: 4px;
+    background: var(--text-gray);
+    border-radius: 2px;
+    transition: all 0.3s ease;
+}
+
+.password-strength-segment.weak {
+    background: #ff4444;
+}
+
+.password-strength-segment.medium {
+    background: #ffaa00;
+}
+
+.password-strength-segment.strong {
+    background: #4CAF50;
+}
+
+.password-strength-text {
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.password-strength-text.weak {
+    color: #ff4444;
+}
+
+.password-strength-text.medium {
+    color: #ffaa00;
+}
+
+.password-strength-text.strong {
+    color: #4CAF50;
+}
+
+.password-strength-text.empty {
+    color: var(--text-gray);
+}
+
+.password-requirements {
+    font-size: 0.75rem;
+    color: var(--text-gray);
+    margin-top: 0.25rem;
+}
+
+.password-requirements .requirement {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+}
+
+.password-requirements .requirement.valid {
+    color: #4CAF50;
+}
+
+.password-requirements .requirement.invalid {
+    color: var(--text-gray);
+}
+
+/* ====== Change Password Section Styling ====== */
+.change-password-section {
+    background: linear-gradient(135deg, rgba(255, 75, 43, 0.05) 0%, rgba(255, 65, 108, 0.05) 100%);
+    padding: 2rem !important;
+    border-radius: 16px;
+    border: 2px solid rgba(255, 75, 43, 0.2);
+    margin-top: 2rem;
+    transition: all 0.3s ease;
+}
+
+.change-password-section:hover {
+    border-color: rgba(255, 75, 43, 0.4);
+    box-shadow: 0 4px 16px rgba(255, 75, 43, 0.1);
+}
+
+.change-password-heading {
+    color: var(--primary-color) !important;
+    font-size: 1.3rem !important;
+    font-weight: 700 !important;
+    margin-bottom: 1.5rem !important;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid rgba(255, 75, 43, 0.2);
+}
+
+.change-password-heading i {
+    color: var(--primary-color);
+    font-size: 1.2rem;
+}
+
+.change-password-section .form-group label {
+    color: #333 !important;
+    font-weight: 600;
+}
+
+.change-password-section .submit-btn {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+    background-color: #28a745 !important;
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4), 0 2px 6px rgba(0, 0, 0, 0.1) !important;
+}
+
+.change-password-section .submit-btn:hover {
+    background: linear-gradient(135deg, #218838 0%, #1aa179 100%) !important;
+    background-color: #218838 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(40, 167, 69, 0.5), 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.change-password-section .form-group input:focus {
+    border-color: #28a745 !important;
+    box-shadow: 0 4px 16px rgba(40, 167, 69, 0.15) !important;
+}
