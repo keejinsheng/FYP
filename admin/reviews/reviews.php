@@ -463,7 +463,60 @@ $reviews = $stmt->fetchAll();
         </div>
 
         <?php if (empty($reviews)): ?>
-            <p style="color: var(--text-gray); text-align: center; padding: 2rem;">No reviews found.</p>
+            <p style="color: var(--text-gray); text-align: center; padding: 2rem 2rem 1rem;">
+                No reviews found yet.
+            </p>
+            <div style="max-width: 520px; margin: 0 auto 2.5rem; color: var(--text-gray); font-size: 0.9rem; text-align:center;">
+                This is a sample preview of how customer reviews will look once they start submitting ratings.
+            </div>
+            <div class="reviews-grid">
+                <div class="review-card">
+                    <div class="review-header">
+                        <div class="review-customer">
+                            <div class="customer-name">
+                                John Doe
+                            </div>
+                            <div class="customer-email">
+                                john.doe@example.com
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="review-rating">
+                        <i class="fas fa-star star"></i>
+                        <i class="fas fa-star star"></i>
+                        <i class="fas fa-star star"></i>
+                        <i class="fas fa-star star"></i>
+                        <i class="far fa-star star empty"></i>
+                        <span style="margin-left: 0.5rem; color: var(--text-gray); font-size: 0.85rem;">4/5</span>
+                    </div>
+
+                    <div class="product-info">
+                        <div class="product-image" style="background:#444; display:flex; align-items:center; justify-content:center; color:#999; font-size:0.7rem;">
+                            IMG
+                        </div>
+                        <div class="product-name">Sample Product Name</div>
+                    </div>
+
+                    <div class="review-comment" style="color: var(--text-light);">
+                        “The food was delicious and arrived still hot. Portion size was generous and the packaging was neat.”
+                    </div>
+
+                    <div class="review-footer">
+                        <div class="review-date">
+                            <i class="far fa-clock"></i> Jan 1, 2025 12:34 PM
+                        </div>
+                        <div class="review-badges">
+                            <span class="badge verified">
+                                <i class="fas fa-check-circle"></i> Verified Purchase
+                            </span>
+                            <span class="badge approved">
+                                Approved
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         <?php else: ?>
             <div class="search-container">
                 <div class="search-box">
