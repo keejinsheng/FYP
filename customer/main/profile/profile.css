@@ -672,7 +672,6 @@ body.modal-open { overflow: hidden; }
 }
 
 .change-password-section .form-group label {
-    color: #ffffff !important;
     font-weight: 600;
 }
 
