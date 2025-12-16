@@ -23,6 +23,21 @@ $stmt = $pdo->prepare("SELECT p.*, c.category_name FROM product p
                        ORDER BY p.product_name");
 $stmt->execute();
 $products = $stmt->fetchAll();
+
+// Fetch recent reviews with product and user information
+$stmt = $pdo->prepare("
+    SELECT r.*, 
+           p.product_name, p.image as product_image,
+           u.first_name, u.last_name, u.username
+    FROM review r
+    JOIN product p ON r.product_id = p.product_id
+    JOIN user u ON r.user_id = u.user_id
+    WHERE r.is_approved = 1
+    ORDER BY r.created_at DESC
+    LIMIT 10
+");
+$stmt->execute();
+$reviews = $stmt->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -178,6 +193,139 @@ $products = $stmt->fetchAll();
             .carousel-arrow.left { left: 0; }
             .carousel-arrow.right { right: 0; }
         }
+
+        /* Reviews Section Styles */
+        .reviews-section {
+            background: var(--background-dark);
+            padding: 4rem 1rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .reviews-section h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 3rem;
+        }
+
+        .reviews-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .review-card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-soft);
+            transition: var(--transition);
+        }
+
+        .review-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-strong);
+        }
+
+        .review-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .review-product-image {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+
+        .review-product-info {
+            flex: 1;
+        }
+
+        .review-product-name {
+            font-weight: 600;
+            color: var(--text-light);
+            margin-bottom: 0.25rem;
+            font-size: 1rem;
+        }
+
+        .review-user-name {
+            color: var(--text-gray);
+            font-size: 0.9rem;
+        }
+
+        .review-rating {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .review-stars {
+            color: #ffc107;
+            font-size: 1rem;
+        }
+
+        .review-rating-text {
+            color: var(--text-gray);
+            font-size: 0.9rem;
+        }
+
+        .review-comment {
+            color: var(--text-light);
+            line-height: 1.6;
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+        }
+
+        .review-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .review-date {
+            color: var(--text-gray);
+            font-size: 0.85rem;
+        }
+
+        .verified-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            background: rgba(76, 175, 80, 0.2);
+            color: #4caf50;
+            padding: 0.2rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .no-reviews {
+            text-align: center;
+            color: var(--text-gray);
+            padding: 3rem;
+            font-size: 1.1rem;
+        }
+
+        @media (max-width: 768px) {
+            .reviews-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .reviews-section h2 {
+                font-size: 2rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -204,6 +352,60 @@ $products = $stmt->fetchAll();
                     <button class="carousel-arrow right" aria-label="Scroll right"><i class="fas fa-chevron-right"></i></button>
                 </div>
             </div>
+        </section>
+
+        <section class="reviews-section">
+            <h2><i class=""></i> Customer Reviews</h2>
+            <?php if (!empty($reviews)): ?>
+                <div class="reviews-grid">
+                    <?php foreach ($reviews as $review): ?>
+                        <div class="review-card">
+                            <div class="review-header">
+                                <img src="../../../food_images/<?php echo htmlspecialchars($review['product_image']); ?>" 
+                                     alt="<?php echo htmlspecialchars($review['product_name']); ?>" 
+                                     class="review-product-image">
+                                <div class="review-product-info">
+                                    <div class="review-product-name"><?php echo htmlspecialchars($review['product_name']); ?></div>
+                                    <div class="review-user-name">
+                                        <?php echo htmlspecialchars($review['first_name'] . ' ' . $review['last_name']); ?>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="review-rating">
+                                <div class="review-stars">
+                                    <?php for ($i = 1; $i <= 5; $i++): ?>
+                                        <i class="fas fa-star<?php echo $i <= $review['rating'] ? '' : '-o'; ?>"></i>
+                                    <?php endfor; ?>
+                                </div>
+                                <span class="review-rating-text"><?php echo $review['rating']; ?>/5</span>
+                            </div>
+                            
+                            <?php if (!empty($review['comment'])): ?>
+                                <div class="review-comment">
+                                    "<?php echo htmlspecialchars($review['comment']); ?>"
+                                </div>
+                            <?php endif; ?>
+                            
+                            <div class="review-footer">
+                                <div class="review-date">
+                                    <i class="far fa-clock"></i> <?php echo date('M d, Y', strtotime($review['created_at'])); ?>
+                                </div>
+                                <?php if ($review['is_verified_purchase']): ?>
+                                    <span class="verified-badge">
+                                        <i class="fas fa-check-circle"></i> Verified Purchase
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php else: ?>
+                <div class="no-reviews">
+                    <i class="fas fa-comment-slash" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                    <p>No reviews yet. Be the first to review our products!</p>
+                </div>
+            <?php endif; ?>
         </section>
     </main>
     <?php include_once __DIR__ . '/../../includes/footer.php'; ?>

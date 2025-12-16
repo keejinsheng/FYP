@@ -67,19 +67,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $current_password = $_POST['current_password'] ?? '';
         $new_password = $_POST['new_password'] ?? '';
         $confirm_password = $_POST['confirm_password'] ?? '';
-        
+
         if (empty($current_password) || empty($new_password) || empty($confirm_password)) {
             $error_message = 'Please fill in all password fields';
         } elseif ($new_password !== $confirm_password) {
             $error_message = 'New passwords do not match';
         } elseif (strlen($new_password) < 6) {
             $error_message = 'Password must be at least 6 characters long';
+        } elseif (!preg_match('/[a-zA-Z]/', $new_password)) {
+            $error_message = 'Password must contain at least one letter';
+        } elseif (!preg_match('/[0-9]/', $new_password)) {
+            $error_message = 'Password must contain at least one number';
         } else {
             // Verify current password
             $stmt = $pdo->prepare("SELECT password_hash FROM admin_user WHERE admin_id = ?");
             $stmt->execute([$admin_id]);
             $result = $stmt->fetch();
-            
+
             if ($result && password_verify($current_password, $result['password_hash'])) {
                 try {
                     $hash = password_hash($new_password, PASSWORD_BCRYPT);
@@ -404,6 +408,101 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             color: var(--text-light);
         }
 
+        /* Password Match Validation Styles */
+        .password-match-message {
+            padding: 0.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            font-size: 0.85rem;
+        }
+
+        .password-match-success {
+            background-color: rgba(40, 167, 69, 0.15);
+            color: #9be7a0;
+            border: 1px solid rgba(40, 167, 69, 0.6);
+        }
+
+        .password-match-error {
+            background-color: rgba(220, 53, 69, 0.15);
+            color: #ffb3b8;
+            border: 1px solid rgba(220, 53, 69, 0.6);
+        }
+
+        /* Password Strength Indicator */
+        .password-strength-container {
+            margin-top: 0.5rem;
+        }
+
+        .password-strength-bar {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 0.5rem;
+        }
+
+        .password-strength-segment {
+            flex: 1;
+            height: 4px;
+            background: var(--text-gray);
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .password-strength-segment.weak {
+            background: #ff4444;
+        }
+
+        .password-strength-segment.medium {
+            background: #ffaa00;
+        }
+
+        .password-strength-segment.strong {
+            background: #4CAF50;
+        }
+
+        .password-strength-text {
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .password-strength-text.weak {
+            color: #ff7777;
+        }
+
+        .password-strength-text.medium {
+            color: #ffdd77;
+        }
+
+        .password-strength-text.strong {
+            color: #8ef58e;
+        }
+
+        .password-strength-text.empty {
+            color: var(--text-gray);
+        }
+
+        .password-requirements {
+            font-size: 0.75rem;
+            color: var(--text-gray);
+            margin-top: 0.25rem;
+        }
+
+        .password-requirements .requirement {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.25rem;
+        }
+
+        .password-requirements .requirement.valid {
+            color: #4CAF50;
+        }
+
+        .password-requirements .requirement.invalid {
+            color: var(--text-gray);
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 0 1rem;
@@ -545,7 +644,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input type="password" id="new_password" name="new_password" required minlength="6">
                         <i class="fas fa-eye" onclick="togglePassword('new_password', this)"></i>
                     </div>
-                    <small style="color: var(--text-gray); font-size: 0.85rem;">Password must be at least 6 characters long</small>
+                    <div class="password-strength-container">
+                        <div class="password-strength-bar">
+                            <div class="password-strength-segment" id="strength-seg-1"></div>
+                            <div class="password-strength-segment" id="strength-seg-2"></div>
+                            <div class="password-strength-segment" id="strength-seg-3"></div>
+                            <div class="password-strength-segment" id="strength-seg-4"></div>
+                        </div>
+                        <div class="password-strength-text empty" id="strength-text"></div>
+                        <div class="password-requirements">
+                            <div class="requirement invalid" id="req-length">
+                                <span>✓</span>
+                                <span>At least 6 characters</span>
+                            </div>
+                            <div class="requirement invalid" id="req-letter">
+                                <span>✓</span>
+                                <span>Contains at least one letter</span>
+                            </div>
+                            <div class="requirement invalid" id="req-number">
+                                <span>✓</span>
+                                <span>Contains at least one number</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -554,6 +675,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input type="password" id="confirm_password" name="confirm_password" required minlength="6">
                         <i class="fas fa-eye" onclick="togglePassword('confirm_password', this)"></i>
                     </div>
+                    <div id="passwordMatchMessage" class="password-match-message" style="display: none; margin-top: 0.5rem;"></div>
                 </div>
 
                 <button type="submit" class="submit-btn">
@@ -577,14 +699,174 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        // Validate password match on form submit
+        // ===== Password strength indicator (same logic as customer profile) =====
+        (function() {
+            const passwordInput = document.getElementById('new_password');
+            if (!passwordInput) return;
+
+            const strengthSegments = [
+                document.getElementById('strength-seg-1'),
+                document.getElementById('strength-seg-2'),
+                document.getElementById('strength-seg-3'),
+                document.getElementById('strength-seg-4')
+            ];
+            const strengthText = document.getElementById('strength-text');
+            const reqLength = document.getElementById('req-length');
+            const reqLetter = document.getElementById('req-letter');
+            const reqNumber = document.getElementById('req-number');
+
+            function checkPasswordStrength(password) {
+                let strength = 0;
+                let strengthLevel = 'empty';
+                let strengthLabel = '';
+
+                const hasLength = password.length >= 6;
+                const hasLetter = /[a-zA-Z]/.test(password);
+                const hasNumber = /[0-9]/.test(password);
+
+                // update requirement indicators
+                if (hasLength) {
+                    reqLength.classList.remove('invalid');
+                    reqLength.classList.add('valid');
+                } else {
+                    reqLength.classList.remove('valid');
+                    reqLength.classList.add('invalid');
+                }
+
+                if (hasLetter) {
+                    reqLetter.classList.remove('invalid');
+                    reqLetter.classList.add('valid');
+                } else {
+                    reqLetter.classList.remove('valid');
+                    reqLetter.classList.add('invalid');
+                }
+
+                if (hasNumber) {
+                    reqNumber.classList.remove('invalid');
+                    reqNumber.classList.add('valid');
+                } else {
+                    reqNumber.classList.remove('valid');
+                    reqNumber.classList.add('invalid');
+                }
+
+                if (password.length === 0) {
+                    strengthLevel = 'empty';
+                    strengthLabel = '';
+                } else {
+                    if (password.length >= 8) {
+                        strength += 1;
+                    } else if (password.length >= 6) {
+                        strength += 0.5;
+                    }
+
+                    if (/[a-z]/.test(password)) {
+                        strength += 1;
+                    }
+
+                    if (/[A-Z]/.test(password)) {
+                        strength += 1;
+                    }
+
+                    if (/[0-9]/.test(password)) {
+                        strength += 1;
+                    }
+
+                    if (/[^a-zA-Z0-9]/.test(password)) {
+                        strength += 1;
+                    }
+
+                    if (strength <= 2) {
+                        strengthLevel = 'weak';
+                        strengthLabel = 'weak';
+                    } else if (strength <= 3.5) {
+                        strengthLevel = 'medium';
+                        strengthLabel = 'medium';
+                    } else {
+                        strengthLevel = 'strong';
+                        strengthLabel = 'strong';
+                    }
+                }
+
+                strengthSegments.forEach((seg, index) => {
+                    seg.classList.remove('weak', 'medium', 'strong');
+                    if (strengthLevel === 'empty') {
+                        // no color
+                    } else if (strengthLevel === 'weak') {
+                        if (index === 0) seg.classList.add('weak');
+                    } else if (strengthLevel === 'medium') {
+                        if (index <= 1) seg.classList.add('medium');
+                    } else if (strengthLevel === 'strong') {
+                        seg.classList.add('strong');
+                    }
+                });
+
+                strengthText.textContent = strengthLabel;
+                strengthText.className = 'password-strength-text ' + strengthLevel;
+            }
+
+            passwordInput.addEventListener('input', function() {
+                checkPasswordStrength(this.value);
+            });
+
+            // init
+            checkPasswordStrength(passwordInput.value);
+        })();
+
+        // Real-time password match validation
+        function checkPasswordMatch() {
+            const newPassword = document.getElementById('new_password').value;
+            const confirmPassword = document.getElementById('confirm_password').value;
+            const messageDiv = document.getElementById('passwordMatchMessage');
+            const confirmInput = document.getElementById('confirm_password');
+
+            if (confirmPassword.length === 0 || newPassword.length === 0) {
+                messageDiv.style.display = 'none';
+                confirmInput.style.borderColor = '#444';
+                return;
+            }
+
+            messageDiv.style.display = 'block';
+
+            if (newPassword === confirmPassword) {
+                messageDiv.textContent = '✓ Passwords match';
+                messageDiv.className = 'password-match-message password-match-success';
+                confirmInput.style.borderColor = '#28a745';
+            } else {
+                messageDiv.textContent = '✗ Passwords do not match';
+                messageDiv.className = 'password-match-message password-match-error';
+                confirmInput.style.borderColor = '#dc3545';
+            }
+        }
+
+        document.getElementById('new_password')?.addEventListener('input', checkPasswordMatch);
+        document.getElementById('confirm_password')?.addEventListener('input', checkPasswordMatch);
+
+        // Validate password on form submit
         document.getElementById('passwordForm').addEventListener('submit', function(e) {
             const newPassword = document.getElementById('new_password').value;
             const confirmPassword = document.getElementById('confirm_password').value;
-            
+
             if (newPassword !== confirmPassword) {
                 e.preventDefault();
                 alert('New passwords do not match!');
+                return false;
+            }
+
+            if (newPassword.length < 6) {
+                e.preventDefault();
+                alert('Password must be at least 6 characters long!');
+                return false;
+            }
+
+            if (!/[a-zA-Z]/.test(newPassword)) {
+                e.preventDefault();
+                alert('Password must contain at least one letter!');
+                return false;
+            }
+
+            if (!/[0-9]/.test(newPassword)) {
+                e.preventDefault();
+                alert('Password must contain at least one number!');
                 return false;
             }
         });
