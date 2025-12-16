@@ -18,6 +18,25 @@ $stmt = $pdo->prepare("SELECT p.*, c.category_name
 ");
 $stmt->execute();
 $products = $stmt->fetchAll();
+
+// Fetch average ratings and review counts for each product
+$product_ratings = [];
+$stmt = $pdo->prepare("
+    SELECT product_id, 
+           AVG(rating) as avg_rating, 
+           COUNT(*) as review_count
+    FROM review 
+    WHERE is_approved = 1
+    GROUP BY product_id
+");
+$stmt->execute();
+$ratings_data = $stmt->fetchAll();
+foreach ($ratings_data as $rating) {
+    $product_ratings[$rating['product_id']] = [
+        'avg_rating' => round($rating['avg_rating'], 1),
+        'review_count' => $rating['review_count']
+    ];
+}
 // Category fallback images for consistent visuals
 $categoryImages = [
     'Main Course' => 'rendang_beef.png',
@@ -102,6 +121,33 @@ $categoryImages = [
                     <div class="menu-info">
                         <h3><?php echo htmlspecialchars($product['product_name']); ?></h3>
                         <p><?php echo htmlspecialchars($product['description']); ?></p>
+                        <?php 
+                            $product_id = $product['product_id'];
+                            $rating_info = $product_ratings[$product_id] ?? null;
+                        ?>
+                        <?php if ($rating_info && $rating_info['review_count'] > 0): ?>
+                            <div class="menu-item-rating">
+                                <div class="stars">
+                                    <?php 
+                                        $avg_rating = $rating_info['avg_rating'];
+                                        $full_stars = floor($avg_rating);
+                                        $has_half_star = ($avg_rating - $full_stars) >= 0.5;
+                                    ?>
+                                    <?php for ($i = 1; $i <= 5; $i++): ?>
+                                        <?php if ($i <= $full_stars): ?>
+                                            <i class="fas fa-star"></i>
+                                        <?php elseif ($i == $full_stars + 1 && $has_half_star): ?>
+                                            <i class="fas fa-star-half-alt"></i>
+                                        <?php else: ?>
+                                            <i class="far fa-star"></i>
+                                        <?php endif; ?>
+                                    <?php endfor; ?>
+                                </div>
+                                <span class="reviews-count">
+                                    <?php echo number_format($avg_rating, 1); ?> (<?php echo $rating_info['review_count']; ?> review<?php echo $rating_info['review_count'] > 1 ? 's' : ''; ?>)
+                                </span>
+                            </div>
+                        <?php endif; ?>
                         <div class="menu-footer">
                             <span class="price">RM <?php echo number_format($product['price'], 2); ?></span>
                             <?php 
