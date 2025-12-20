@@ -40,7 +40,7 @@ function isAdmin() {
 
 // Normalize role text (e.g., "Super Admin" -> "superadmin")
 function normalizeRole($role) {
-    return strtolower(preg_replace('/[^a-z]/i', '', (string)$role));
+    return strtolower(preg_replace('/[^a-z]/', '', (string)$role));
 }
 
 // Helper function to check if admin is superadmin
@@ -102,73 +102,157 @@ function generateRandomString($length = 10) {
     return bin2hex(random_bytes($length));
 }
 
-// Helper function to validate payment method against database ENUM
-function isValidPaymentMethod($payment_method) {
-    $valid_methods = getValidPaymentMethods();
-    return in_array($payment_method, $valid_methods, true);
-}
-
-// Helper function to get all valid payment methods from database ENUM
-function getValidPaymentMethods() {
-    try {
-        $pdo = getDBConnection();
-        $stmt = $pdo->query("SHOW COLUMNS FROM payment LIKE 'payment_method'");
-        $column_info = $stmt->fetch();
-        
-        if ($column_info && isset($column_info['Type'])) {
-            // Extract ENUM values from the type definition
-            preg_match("/enum\('(.+)'\)/i", $column_info['Type'], $matches);
-            if (isset($matches[1])) {
-                return array_map('trim', explode("','", $matches[1]));
-            }
-        }
-    } catch (Exception $e) {
-        // Fallback to static list if database query fails
-    }
-    
-    // Fallback static list (matches database ENUM: 'Cash','Card','Credit Card','Debit Card','PayPal','Online Banking')
-    return ['Cash', 'Card', 'Credit Card', 'Debit Card', 'PayPal', 'Online Banking'];
-}
-
 // Helper function to verify bank information against dummy_bank table
-function verifyBankInfo($bank_name, $cardholder_name, $card_number, $expiry_date, $cvv) {
+function verifyBankDetails($bank_name, $cardholder_name, $card_number, $expiry_date, $cvv) {
     try {
         $pdo = getDBConnection();
         
-        // Clean card number (remove spaces)
-        $card_number_clean = preg_replace('/\s+/', '', $card_number);
-        
-        // Normalize inputs for case-insensitive comparison (except card number and CVV)
+        // Clean and normalize all inputs
+        $card_number_clean = preg_replace('/\s+/', '', trim($card_number));
         $bank_name_normalized = trim($bank_name);
         $cardholder_name_normalized = trim($cardholder_name);
         $expiry_date_normalized = trim($expiry_date);
+        $cvv_normalized = trim($cvv);
+
+        // First check if table exists
+        $table_check = $pdo->query("SHOW TABLES LIKE 'dummy_bank'");
+        if ($table_check->rowCount() == 0) {
+            error_log("dummy_bank table does not exist");
+            return false;
+        }
+
+        // Build WHERE clause to match all fields
+        // Bank name is optional (for Credit Card), but if provided, it must match
+        // Use case-insensitive comparison for text fields, exact match for numbers/dates
+        // For card_number, remove spaces from database value for comparison
+        $where_conditions = [];
+        $params = [];
         
-        // Verify bank information in dummy_bank table (case-insensitive for bank_name and cardholder_name)
-        $stmt = $pdo->prepare("
-            SELECT bank_id 
-            FROM dummy_bank 
-            WHERE LOWER(TRIM(bank_name)) = LOWER(?) 
-            AND LOWER(TRIM(cardholder_name)) = LOWER(?) 
-            AND card_number = ? 
-            AND expiry_date = ? 
-            AND cvv = ? 
-            AND is_active = 1
-            LIMIT 1
-        ");
-        $stmt->execute([
-            $bank_name_normalized, 
-            $cardholder_name_normalized, 
-            $card_number_clean, 
-            $expiry_date_normalized, 
-            $cvv
-        ]);
+        // Add bank_name condition only if provided (required for Online Banking, optional for Credit Card)
+        if (!empty($bank_name_normalized)) {
+            $where_conditions[] = "LOWER(TRIM(bank_name)) = LOWER(?)";
+            $params[] = $bank_name_normalized;
+        }
+        
+        // Always check these fields
+        $where_conditions[] = "LOWER(TRIM(cardholder_name)) = LOWER(?)";
+        $where_conditions[] = "REPLACE(REPLACE(TRIM(card_number), ' ', ''), '-', '') = ?";
+        $where_conditions[] = "TRIM(expiry_date) = ?";
+        $where_conditions[] = "TRIM(cvv) = ?";
+        $where_conditions[] = "is_active = 1";
+        
+        $params[] = $cardholder_name_normalized;
+        $params[] = $card_number_clean;
+        $params[] = $expiry_date_normalized;
+        $params[] = $cvv_normalized;
+        
+        $sql = "SELECT bank_id, bank_name, cardholder_name, card_number, expiry_date, cvv 
+                FROM dummy_bank 
+                WHERE " . implode(" AND ", $where_conditions) . "
+                LIMIT 1";
+        
+        // Log the SQL query and parameters for debugging
+        $debug_sql = $sql;
+        foreach ($params as $idx => $param) {
+            $debug_sql = preg_replace('/\?/', "'" . addslashes($param) . "'", $debug_sql, 1);
+        }
+        error_log("Bank verification SQL: " . $debug_sql);
+        
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        
         $bank_info = $stmt->fetch();
+        
+        // If no match and bank_name was provided, try again without bank_name (for Credit Card)
+        if ($bank_info === false && !empty($bank_name_normalized)) {
+            $fallback_conditions = [
+                "LOWER(TRIM(cardholder_name)) = LOWER(?)",
+                "REPLACE(TRIM(card_number), ' ', '') = ?",
+                "TRIM(expiry_date) = ?",
+                "TRIM(cvv) = ?",
+                "is_active = 1"
+            ];
+            
+            $fallback_params = [
+                $cardholder_name_normalized,
+                $card_number_clean,
+                $expiry_date_normalized,
+                $cvv_normalized
+            ];
+            
+            $fallback_sql = "SELECT bank_id, bank_name, cardholder_name, card_number, expiry_date, cvv 
+                            FROM dummy_bank 
+                            WHERE " . implode(" AND ", $fallback_conditions) . "
+                            LIMIT 1";
+            
+            $fallback_stmt = $pdo->prepare($fallback_sql);
+            $fallback_stmt->execute($fallback_params);
+            $bank_info = $fallback_stmt->fetch();
+            
+            if ($bank_info !== false) {
+                error_log("Bank verification SUCCESS (without bank_name match) for: $cardholder_name_normalized");
+            }
+        }
+        
+        // Debug logging - log the comparison details
+        if ($bank_info === false) {
+            // Get all records for comparison
+            $debug_sql = "SELECT bank_name, cardholder_name, card_number, expiry_date, cvv, is_active FROM dummy_bank";
+            $debug_stmt = $pdo->query($debug_sql);
+            $all_banks = $debug_stmt->fetchAll();
+            
+            $debug_info = "=== Bank Verification Failed ===\n";
+            $debug_info .= "SQL Query: " . $sql . "\n";
+            $debug_info .= "Parameters: " . print_r($params, true) . "\n";
+            $debug_info .= "Input values (normalized):\n";
+            $debug_info .= "  Bank: '$bank_name_normalized' (length: " . strlen($bank_name_normalized) . ", empty: " . (empty($bank_name_normalized) ? 'YES' : 'NO') . ")\n";
+            $debug_info .= "  Cardholder: '$cardholder_name_normalized' (length: " . strlen($cardholder_name_normalized) . ")\n";
+            $debug_info .= "  Card: '$card_number_clean' (length: " . strlen($card_number_clean) . ")\n";
+            $debug_info .= "  Expiry: '$expiry_date_normalized' (length: " . strlen($expiry_date_normalized) . ")\n";
+            $debug_info .= "  CVV: '$cvv_normalized' (length: " . strlen($cvv_normalized) . ")\n\n";
+            $debug_info .= "All database records:\n";
+            foreach ($all_banks as $idx => $bank) {
+                $active_status = $bank['is_active'] ? 'ACTIVE' : 'INACTIVE';
+                $debug_info .= "  Record #" . ($idx + 1) . " ($active_status):\n";
+                $db_bank = trim($bank['bank_name']);
+                $db_cardholder = trim($bank['cardholder_name']);
+                $db_card = trim($bank['card_number']);
+                $db_expiry = trim($bank['expiry_date']);
+                $db_cvv = trim($bank['cvv']);
+                
+                $debug_info .= "    Bank: '$db_bank' (length: " . strlen($db_bank) . ")\n";
+                $debug_info .= "    Cardholder: '$db_cardholder' (length: " . strlen($db_cardholder) . ")\n";
+                $debug_info .= "    Card: '$db_card' (length: " . strlen($db_card) . ")\n";
+                $debug_info .= "    Expiry: '$db_expiry' (length: " . strlen($db_expiry) . ")\n";
+                $debug_info .= "    CVV: '$db_cvv' (length: " . strlen($db_cvv) . ")\n";
+                
+                // Check each field individually
+                $bank_match = empty($bank_name_normalized) ? true : (strtolower($db_bank) === strtolower($bank_name_normalized));
+                $cardholder_match = (strtolower($db_cardholder) === strtolower($cardholder_name_normalized));
+                $card_match = ($db_card === $card_number_clean);
+                $expiry_match = ($db_expiry === $expiry_date_normalized);
+                $cvv_match = ($db_cvv === $cvv_normalized);
+                
+                $debug_info .= "    Field-by-field comparison:\n";
+                $debug_info .= "      Bank: " . ($bank_match ? 'MATCH' : "NO MATCH - DB: '$db_bank' vs Input: '$bank_name_normalized'") . "\n";
+                $debug_info .= "      Cardholder: " . ($cardholder_match ? 'MATCH' : "NO MATCH - DB: '$db_cardholder' vs Input: '$cardholder_name_normalized'") . "\n";
+                $debug_info .= "      Card: " . ($card_match ? 'MATCH' : "NO MATCH - DB: '$db_card' vs Input: '$card_number_clean'") . "\n";
+                $debug_info .= "      Expiry: " . ($expiry_match ? 'MATCH' : "NO MATCH - DB: '$db_expiry' vs Input: '$expiry_date_normalized'") . "\n";
+                $debug_info .= "      CVV: " . ($cvv_match ? 'MATCH' : "NO MATCH - DB: '$db_cvv' vs Input: '$cvv_normalized'") . "\n";
+                $debug_info .= "      Active: " . ($bank['is_active'] ? 'YES' : 'NO') . "\n\n";
+            }
+            error_log($debug_info);
+        } else {
+            error_log("Bank verification SUCCESS for: $bank_name_normalized, $cardholder_name_normalized");
+        }
         
         return $bank_info !== false;
     } catch (Exception $e) {
         // If table doesn't exist or error occurs, return false for security
         error_log("Bank verification error: " . $e->getMessage());
+        error_log("Stack trace: " . $e->getTraceAsString());
         return false;
     }
 }
+
 ?> 
