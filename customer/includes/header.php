@@ -51,7 +51,7 @@ if (isLoggedIn()) {
                         <i class="fas fa-user"></i>
                         Profile
                     </a>
-                    <a href="../dashboard/Cdashboard.php" class="dashboard-link">
+                    <a href="../dashboard/dashboard.php" class="dashboard-link">
                         <i class="fas fa-tachometer-alt"></i>
                         Dashboard
                     </a>

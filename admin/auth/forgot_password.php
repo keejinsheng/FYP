@@ -38,7 +38,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 1) {
             $stmt->execute([$email]);
             $admin = $stmt->fetch();
 
-            if ($admin) {
+            // simple rate limit: allow resend only every 60 seconds
+            $canSend = true;
+            if (isset($_SESSION['admin_otp_last_sent'])) {
+                $elapsed = time() - (int)$_SESSION['admin_otp_last_sent'];
+                if ($elapsed < 60) {
+                    $canSend = false;
+                    $remaining = 60 - $elapsed;
+                    $error_message = 'Please wait ' . $remaining . ' seconds before requesting another OTP.';
+                    // keep user on step 2 if email was already entered previously
+                    $_SESSION['admin_otp_email'] = $email;
+                    $step = 2;
+                }
+            }
+
+            if ($canSend && $admin) {
                 $otp = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
                 $otp_expiry = date('Y-m-d H:i:s', strtotime('+10 minutes'));
 
@@ -100,15 +114,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 1) {
                     $mail->send();
 
                     $_SESSION['admin_otp_email'] = $email;
+                    $_SESSION['admin_otp_last_sent'] = time();
                     $success_message = 'OTP has been sent to your email address.';
                     $step = 2;
                 } catch (Exception $e) {
                     $error_message = 'Failed to send OTP. Please try again later.';
                 }
-            } else {
+            } elseif ($canSend) {
+                // Email not found but still respond generically
                 $success_message = 'If the email is registered, an OTP has been sent.';
                 $step = 2;
                 $_SESSION['admin_otp_email'] = $email;
+                $_SESSION['admin_otp_last_sent'] = time();
             }
         } catch (Exception $e) {
             $error_message = 'An error occurred. Please try again.';
@@ -278,6 +295,27 @@ if ($step === 2 && empty($_SESSION['admin_otp_email'])) {
             transform: translateY(-2px);
             box-shadow: var(--shadow-strong);
         }
+        .resend-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 0.5rem;
+            margin-bottom: 1.2rem;
+            font-size: 0.85rem;
+            color: var(--text-gray);
+        }
+        .link-btn {
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            padding: 0;
+        }
+        .link-btn:hover {
+            text-decoration: underline;
+        }
         .back-link {
             text-align: center;
             margin-top: 1.5rem;
@@ -324,6 +362,14 @@ if ($step === 2 && empty($_SESSION['admin_otp_email'])) {
                 <div class="form-group">
                     <label for="otp">OTP Code</label>
                     <input type="text" id="otp" name="otp" maxlength="6" required class="otp-input" pattern="[0-9]{6}" placeholder="000000">
+                    <div class="resend-row">
+                        <span>Didn't receive the email?</span>
+                        <form method="POST" action="" style="margin:0; padding:0;">
+                            <input type="hidden" name="step" value="1">
+                            <input type="hidden" name="email" value="<?php echo htmlspecialchars($_SESSION['admin_otp_email'] ?? ''); ?>">
+                            <button type="submit" class="link-btn">Resend OTP</button>
+                        </form>
+                    </div>
                 </div>
 
                 <div class="form-group">

@@ -9,7 +9,7 @@ if (!isLoggedIn()) {
 // Handle session clearing when user clicks to view order history
 if (isset($_GET['clear_session'])) {
     unset($_SESSION['last_order']);
-    redirect('../dashboard/Cdashboard.php');
+    redirect('../dashboard/dashboard.php');
 }
 
 // Check if there's a last order in session
@@ -577,7 +577,7 @@ $order_data = $order;
             <a href="../../api/download_receipt.php<?php echo isset($order_data['order_id']) ? '?order_id=' . $order_data['order_id'] : ''; ?>" class="btn btn-primary" target="_blank">
                 <i class="fas fa-download"></i> Download Receipt (PDF)
             </a>
-            <a href="../dashboard/Cdashboard.php?clear_session=1" class="btn btn-primary">
+            <a href="../dashboard/dashboard.php?clear_session=1" class="btn btn-primary">
                 <i class="fas fa-list"></i> View Order History
             </a>
             <a href="../index/index.php" class="btn btn-secondary">
@@ -706,7 +706,7 @@ $order_data = $order;
         
         // Remove auto-redirect to let user read the receipt
         // setTimeout(function() {
-        //     window.location.href = '../dashboard/Cdashboard.php';
+        //     window.location.href = '../dashboard/dashboard.php';
         // }, 10000);
     </script>
 </body>

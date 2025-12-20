@@ -36,19 +36,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $email = sanitize($_POST['email'] ?? '');
         $first_name = sanitize($_POST['first_name'] ?? '');
         $last_name = sanitize($_POST['last_name'] ?? '');
-        $role = trim($_POST['role'] ?? 'Staff');
-        $allowedRoles = ['Staff', 'Manager', 'Super Admin'];
+        // Role is no longer editable from this screen; keep existing role in DB
         $is_active = (int)($_POST['is_active'] ?? 1) ? 1 : 0;
         $password = $_POST['password'] ?? '';
-        if ($admin_id > 0 && $email && $first_name && in_array($role, $allowedRoles, true)) {
+        if ($admin_id > 0 && $email && $first_name) {
             try {
                 if ($password !== '') {
                     $hash = password_hash($password, PASSWORD_BCRYPT);
-                    $stmt = $pdo->prepare("UPDATE admin_user SET email=?, first_name=?, last_name=?, role=?, is_active=?, password_hash=? WHERE admin_id=?");
-                    $stmt->execute([$email, $first_name, $last_name, $role, $is_active, $hash, $admin_id]);
+                    $stmt = $pdo->prepare("UPDATE admin_user SET email=?, first_name=?, last_name=?, is_active=?, password_hash=? WHERE admin_id=?");
+                    $stmt->execute([$email, $first_name, $last_name, $is_active, $hash, $admin_id]);
                 } else {
-                    $stmt = $pdo->prepare("UPDATE admin_user SET email=?, first_name=?, last_name=?, role=?, is_active=? WHERE admin_id=?");
-                    $stmt->execute([$email, $first_name, $last_name, $role, $is_active, $admin_id]);
+                    $stmt = $pdo->prepare("UPDATE admin_user SET email=?, first_name=?, last_name=?, is_active=? WHERE admin_id=?");
+                    $stmt->execute([$email, $first_name, $last_name, $is_active, $admin_id]);
                 }
                 $success_message = 'Admin updated successfully';
             } catch (Exception $e) {
@@ -220,14 +219,7 @@ $admins = $stmt->fetchAll();
                         <input type="text" name="last_name" id="last_name">
                     </label>
                 </div>
-                <div class="form-row" id="roleRow">
-                    <label>Role*
-                        <select name="role" id="role">
-                            <option value="Staff">Staff</option>
-                            <option value="Manager">Manager</option>
-                            <option value="Super Admin">Super Admin</option>
-                        </select>
-                    </label>
+                <div class="form-row">
                     <label>Active
                         <select name="is_active" id="is_active">
                             <option value="1">Active</option>
@@ -250,8 +242,6 @@ $admins = $stmt->fetchAll();
     <script>
     const modalBg = document.getElementById('modalBg');
     const form = document.getElementById('adminForm');
-    const roleRow = document.getElementById('roleRow');
-    const roleSelect = document.getElementById('role');
     const activeSelect = document.getElementById('is_active');
     function openCreate() {
         document.getElementById('modalTitle').innerText = 'New Admin';
@@ -265,8 +255,6 @@ $admins = $stmt->fetchAll();
         document.getElementById('email').value = '';
         document.getElementById('first_name').value = '';
         document.getElementById('last_name').value = '';
-        roleSelect.value = 'Staff';
-        roleSelect.disabled = true;
         activeSelect.value = '1';
         activeSelect.disabled = true;
         const passwordField = document.getElementById('password');
@@ -274,7 +262,6 @@ $admins = $stmt->fetchAll();
         passwordField.required = true;
         document.getElementById('passwordRequired').style.display = 'inline';
         document.getElementById('passwordHint').style.display = 'none';
-        roleRow.style.display = 'none';
         modalBg.style.display = 'block';
     }
     function openEdit(admin) {
@@ -289,8 +276,6 @@ $admins = $stmt->fetchAll();
         document.getElementById('email').value = admin.email;
         document.getElementById('first_name').value = admin.first_name;
         document.getElementById('last_name').value = admin.last_name;
-        roleSelect.value = admin.role;
-        roleSelect.disabled = false;
         activeSelect.value = admin.is_active ? '1' : '0';
         activeSelect.disabled = false;
         const passwordField = document.getElementById('password');
@@ -298,7 +283,6 @@ $admins = $stmt->fetchAll();
         passwordField.required = false;
         document.getElementById('passwordRequired').style.display = 'none';
         document.getElementById('passwordHint').style.display = 'block';
-        roleRow.style.display = 'flex';
         modalBg.style.display = 'block';
     }
     function closeModal(){ modalBg.style.display = 'none'; }
