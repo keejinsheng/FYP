@@ -756,7 +756,7 @@ if (isset($_GET['order_id'])) {
                         </div>
                     </div>
 
-                    <a href="Cdashboard.php" class="view-order-btn">Back to Orders</a>
+                    <a href="dashboard.php" class="view-order-btn">Back to Orders</a>
 
                 <?php else: ?>
                     <!-- Orders List -->
