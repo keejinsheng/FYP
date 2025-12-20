@@ -775,7 +775,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             if (isVisible) {
                 newAddressForm.classList.remove('show');
-                // Uncheck all address radio buttons
+                // Uncheck all address radio button
                 document.querySelectorAll('input[name="selected_address_id"]').forEach(radio => {
                     radio.checked = false;
                 });
