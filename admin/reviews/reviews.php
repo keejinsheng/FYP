@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
-// Fetch all reviews with customer and product information
+// Fetch all reviews with customer and product information\
 $stmt = $pdo->prepare("
     SELECT r.*, 
            u.first_name, u.last_name, u.email,
