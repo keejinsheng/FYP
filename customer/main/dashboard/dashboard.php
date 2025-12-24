@@ -1,7 +1,7 @@
 <?php
 require_once '../../../config/database.php';
 
-// Check if user is logged in
+// Check if user is logged inn
 if (!isLoggedIn()) {
     redirect('../login/login.php');
 }
