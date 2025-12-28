@@ -491,8 +491,6 @@ $orders = $stmt->fetchAll();
                         data-order-number="<?php echo htmlspecialchars(strtolower($order['order_number'])); ?>" 
                         data-customer-name="<?php echo htmlspecialchars(strtolower($order['first_name'] . ' ' . $order['last_name'])); ?>"
                         data-order-email="<?php echo htmlspecialchars(strtolower($order['email'])); ?>">
-                        data-customer-name="<?php echo htmlspecialchars(strtolower($order['first_name'] . ' ' . $order['last_name'])); ?>"
-                        data-order-email="<?php echo htmlspecialchars(strtolower($order['email'])); ?>">
                             <td><?php echo (int)$order['order_id']; ?></td>
                             <td><?php echo htmlspecialchars($order['order_number']); ?></td>
                             <td><?php echo htmlspecialchars($order['first_name'] . ' ' . $order['last_name']); ?><br><span style="color: var(--text-gray); font-size: 0.9em;">(<?php echo htmlspecialchars($order['email']); ?>)</span></td>
@@ -528,7 +526,6 @@ $orders = $stmt->fetchAll();
         <?php endif; ?>
     </div>
 
-    <!-- Order Details Modal -->
     <div id="orderModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -586,7 +583,6 @@ $orders = $stmt->fetchAll();
             const totalItems = items.reduce((sum, item) => sum + parseInt(item.quantity), 0);
             
             let html = `
-                <!-- Order Information -->
                 <div class="order-detail-section">
                     <h3><i class="fas fa-info-circle"></i> Order Information</h3>
                     <div class="detail-row">
@@ -611,7 +607,6 @@ $orders = $stmt->fetchAll();
                     </div>
                 </div>
 
-                <!-- Customer Information -->
                 <div class="order-detail-section">
                     <h3><i class="fas fa-user"></i> Customer Information</h3>
                     <div class="detail-row">
@@ -630,7 +625,6 @@ $orders = $stmt->fetchAll();
                     ` : ''}
                 </div>
 
-                <!-- Ordered Items -->
                 <div class="order-detail-section">
                     <h3><i class="fas fa-shopping-bag"></i> Ordered Items (${totalItems} ${totalItems === 1 ? 'item' : 'items'})</h3>
                     <div class="items-list">
@@ -660,7 +654,6 @@ $orders = $stmt->fetchAll();
                     </div>
                 </div>
 
-                <!-- Payment Information -->
                 <div class="order-detail-section">
                     <h3><i class="fas fa-credit-card"></i> Payment Information</h3>
                     <div class="detail-row">
@@ -675,7 +668,6 @@ $orders = $stmt->fetchAll();
                     ` : ''}
                 </div>
 
-                <!-- Order Summary -->
                 <div class="order-detail-section">
                     <h3><i class="fas fa-calculator"></i> Order Summary</h3>
                     <div class="detail-row">
@@ -744,7 +736,6 @@ $orders = $stmt->fetchAll();
         function filterOrders() {
             const input = document.getElementById('orderSearch');
             const filter = input.value.toLowerCase().trim();
-            const filter = input.value.toLowerCase().trim();
             const table = document.getElementById('ordersTable');
             const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
             const noResults = document.getElementById('noResults');
@@ -756,25 +747,8 @@ $orders = $stmt->fetchAll();
                 const orderNumber = row.getAttribute('data-order-number') || '';
                 const customerName = row.getAttribute('data-customer-name') || '';
                 const orderEmail = row.getAttribute('data-order-email') || '';
-                const orderIdText = `order${orderId}`;
-                const hashIdText = `#${orderId}`;
-                const orderIdWithSpace = `order ${orderId}`;
-                const orderIdLabel = `order id ${orderId}`;
-                const plainIdLabel = `id ${orderId}`;
-                const idCompact = `id${orderId}`;
                 
-                const searchText = [
-                    orderId,
-                    orderNumber,
-                    customerName,
-                    orderEmail,
-                    orderIdText,
-                    hashIdText,
-                    orderIdWithSpace,
-                    orderIdLabel,
-                    plainIdLabel,
-                    idCompact
-                ].join(' ');
+                const searchText = [orderId, orderNumber, customerName, orderEmail].join(' ');
                 
                 if (searchText.includes(filter)) {
                     row.style.display = '';
@@ -793,4 +767,4 @@ $orders = $stmt->fetchAll();
         }
     </script>
 </body>
-</html> 
+</html>

@@ -723,12 +723,25 @@ if (isset($_GET['order_id'])) {
                             <?php foreach ($order_items as $item): ?>
                                 <div class="order-item">
                                     <img src="../../../food_images/<?php echo htmlspecialchars($item['image']); ?>" 
-                                         alt="<?php echo htmlspecialchars($item['product_name']); ?>" class="item-image">
+                                        alt="<?php echo htmlspecialchars($item['product_name']); ?>" class="item-image">
                                     <div class="item-details">
                                         <div class="item-name"><?php echo htmlspecialchars($item['product_name']); ?></div>
                                         <div class="item-quantity">Qty: <?php echo $item['quantity']; ?></div>
                                     </div>
-                                    <div class="item-price">RM <?php echo number_format($item['total_price'], 2); ?></div>
+                                    <div style="text-align: right;">
+                                        <div class="item-price">RM <?php echo number_format($item['total_price'], 2); ?></div>
+                                        
+                                        <?php if (strtolower($selected_order['order_status']) === 'delivered'): ?>
+                                            <button onclick='openReviewModal(<?php echo json_encode([
+                                                "product_id" => $item["product_id"],
+                                                "product_name" => $item["product_name"],
+                                                "order_id" => $selected_order["order_id"]
+                                            ]); ?>)' 
+                                            style="margin-top: 5px; padding: 5px 10px; font-size: 0.8rem; background: transparent; border: 1px solid var(--primary-color); color: var(--primary-color); border-radius: 4px; cursor: pointer;">
+                                                <i class="far fa-star"></i> Rate & Review
+                                            </button>
+                                        <?php endif; ?>
+                                    </div>
                                 </div>
                             <?php endforeach; ?>
                         </div>
@@ -990,8 +1003,118 @@ if (isset($_GET['order_id'])) {
                 event.target.style.display = 'none';
             }
         }
+        // Open Review Modal
+        function openReviewModal(data) {
+            document.getElementById('review_product_id').value = data.product_id;
+            document.getElementById('review_order_id').value = data.order_id;
+            document.getElementById('review_product_name').value = data.product_name;
+            
+            // Reset form
+            document.getElementById('review_rating').value = '';
+            document.getElementById('review_comment').value = '';
+            resetStars();
+            
+            document.getElementById('reviewModal').style.display = 'block';
+        }
+
+        // Handle Star Rating
+        function setRating(rating) {
+            document.getElementById('review_rating').value = rating;
+            const stars = document.querySelectorAll('.star-rating i');
+            stars.forEach((star, index) => {
+                if (index < rating) {
+                    star.classList.remove('far');
+                    star.classList.add('fas');
+                } else {
+                    star.classList.remove('fas');
+                    star.classList.add('far');
+                }
+            });
+        }
+
+        function resetStars() {
+            const stars = document.querySelectorAll('.star-rating i');
+            stars.forEach(star => {
+                star.classList.remove('fas');
+                star.classList.add('far');
+            });
+        }
+
+        // Submit Review via AJAX
+        function submitReview(e) {
+            e.preventDefault();
+            
+            const rating = document.getElementById('review_rating').value;
+            if (!rating) {
+                alert('Please select a rating');
+                return;
+            }
+
+            const formData = new FormData(document.getElementById('reviewForm'));
+
+            fetch('../../api/save_review.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Review submitted successfully!');
+                    closeModal('reviewModal');
+                    // Optional: Reload page or disable button
+                } else {
+                    alert(data.message || 'Error submitting review');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred');
+            });
+        }
     </script>
 
     <?php include_once __DIR__ . '/../../includes/footer.php'; ?>
+
+    <div id="reviewModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Write a Review</h3>
+            <button class="close" onclick="closeModal('reviewModal')">&times;</button>
+        </div>
+        <form id="reviewForm" onsubmit="submitReview(event)">
+            <input type="hidden" id="review_product_id" name="product_id">
+            <input type="hidden" id="review_order_id" name="order_id">
+            
+            <div class="form-group">
+                <label>Product</label>
+                <input type="text" id="review_product_name" readonly style="background: #333; border: none;">
+            </div>
+
+            <div class="form-group">
+                <label>Rating</label>
+                <div class="star-rating" style="display: flex; gap: 5px; font-size: 1.5rem; color: #ffc107; cursor: pointer;">
+                    <i class="far fa-star" data-rating="1" onclick="setRating(1)"></i>
+                    <i class="far fa-star" data-rating="2" onclick="setRating(2)"></i>
+                    <i class="far fa-star" data-rating="3" onclick="setRating(3)"></i>
+                    <i class="far fa-star" data-rating="4" onclick="setRating(4)"></i>
+                    <i class="far fa-star" data-rating="5" onclick="setRating(5)"></i>
+                </div>
+                <input type="hidden" id="review_rating" name="rating" required>
+            </div>
+
+            <div class="form-group">
+                <label for="review_comment">Comment</label>
+                <textarea id="review_comment" name="comment" rows="4" 
+                          style="width: 100%; padding: 0.8rem; border-radius: 6px; background: var(--background-dark); color: #fff; border: 1px solid var(--text-gray);"
+                          placeholder="How was the food?"></textarea>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('reviewModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Submit Review</button>
+            </div>
+        </form>
+    </div>
+    </div>
 </body>
 </html> 

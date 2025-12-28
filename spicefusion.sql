@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 11, 2025 at 04:13 AM
+-- Generation Time: Dec 28, 2025 at 09:25 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -47,7 +47,7 @@ CREATE TABLE `admin_user` (
 --
 
 INSERT INTO `admin_user` (`admin_id`, `username`, `email`, `password_hash`, `first_name`, `last_name`, `role`, `is_active`, `created_at`, `updated_at`, `reset_token`, `token_expiry`) VALUES
-(1, 'jason', 'jinsheng122@gmail.com', '$2y$10$lemN0FW3zBPYVhVoGSFE1e32KldP68stbCXlxGF/Spq1v1kdKGFhe', 'kee', 'jin sheng', 'Staff', 1, '2025-10-30 20:37:04', '2025-12-11 01:15:47', '932924', '2025-12-11 02:25:47'),
+(1, 'jason', 'jinsheng122@gmail.com', '$2y$10$lemN0FW3zBPYVhVoGSFE1e32KldP68stbCXlxGF/Spq1v1kdKGFhe', 'kee', 'jin sheng', 'Staff', 1, '2025-10-30 20:37:04', '2025-12-15 16:16:34', '464918', '2025-12-15 17:26:34'),
 (2, 'Shaun', 'shaun123@gmail.com', '$2y$10$XNd.3RaVEzaS12M39AMsue.2ISG.fTSchCVoSpXSf8nVL9.QZq6Gm', 'Chua Shen', 'Lin Shaun', 'Staff', 0, '2025-11-03 17:20:25', '2025-11-26 02:28:12', NULL, NULL),
 (3, 'SuperAdmin', 'zee271810@gmail.com', '$2y$10$UlkbY1NUlFlbZgOxO8E.3eCix1cl7nXBul7I1TTQWaODWwY4K8zva', 'Kee', 'Jin Sheng', 'Super Admin', 1, '2025-11-19 06:28:38', '2025-11-25 17:25:03', NULL, NULL);
 
@@ -109,6 +109,35 @@ INSERT INTO `delivery_address` (`address_id`, `user_id`, `address_line1`, `addre
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `dummy_bank`
+--
+
+CREATE TABLE `dummy_bank` (
+  `bank_id` int(11) NOT NULL,
+  `bank_name` varchar(100) NOT NULL,
+  `cardholder_name` varchar(100) NOT NULL,
+  `card_number` varchar(19) NOT NULL COMMENT 'Full card number (will be stored for verification)',
+  `expiry_date` varchar(5) NOT NULL COMMENT 'Format: MM/YY',
+  `cvv` varchar(4) NOT NULL,
+  `is_active` tinyint(1) DEFAULT 1 COMMENT '1 = active, 0 = inactive',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `dummy_bank`
+--
+
+INSERT INTO `dummy_bank` (`bank_id`, `bank_name`, `cardholder_name`, `card_number`, `expiry_date`, `cvv`, `is_active`, `created_at`, `updated_at`) VALUES
+(1, 'Maybank', 'Kee Jin Sheng', '1234567890123456', '12/25', '123', 1, '2025-12-24 15:17:59', '2025-12-28 08:22:34'),
+(2, 'CIMB', 'Chua Shen Lin Shaun', '9876543210987654', '06/26', '456', 1, '2025-12-24 15:17:59', '2025-12-28 08:22:54'),
+(3, 'Public Bank', 'Lim Xing Yi', '5555666677778888', '09/27', '789', 1, '2025-12-24 15:17:59', '2025-12-28 08:23:06'),
+(4, 'Hong Leong Bank', 'Alice Brown', '1111222233334444', '03/28', '321', 1, '2025-12-24 15:17:59', '2025-12-24 15:17:59'),
+(5, 'RHB Bank', 'Charlie Wilson', '9999888877776666', '11/29', '654', 1, '2025-12-24 15:17:59', '2025-12-24 15:17:59');
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `order`
 --
 
@@ -139,7 +168,14 @@ INSERT INTO `order` (`order_id`, `user_id`, `address_id`, `order_number`, `order
 (2, 1, 1, 'SF202510309781', 'Delivered', 'Delivery', 17.80, 1.07, 5.00, 23.87, '', '2025-10-30 22:30:29', NULL, '2025-10-30 21:45:29', '2025-12-10 17:33:11'),
 (3, 1, 1, 'SF202510303825', 'Pending', 'Delivery', 32.70, 1.96, 5.00, 39.66, '', '2025-10-30 22:38:34', NULL, '2025-10-30 21:53:34', '2025-12-10 17:33:10'),
 (4, 1, 1, 'SF202510303929', 'Pending', 'Delivery', 21.80, 1.31, 5.00, 28.11, '', '2025-10-30 22:54:30', NULL, '2025-10-30 22:09:30', '2025-12-10 17:33:12'),
-(5, 2, 2, 'SF202511124878', 'Delivered', 'Delivery', 37.80, 2.27, 5.00, 45.07, 'tak nak tofu', '2025-11-12 12:51:04', NULL, '2025-11-12 12:06:04', '2025-12-10 17:33:13');
+(5, 2, 2, 'SF202511124878', 'Delivered', 'Delivery', 37.80, 2.27, 5.00, 45.07, 'tak nak tofu', '2025-11-12 12:51:04', NULL, '2025-11-12 12:06:04', '2025-12-10 17:33:13'),
+(6, 1, 1, 'SF202512249276', 'Pending', 'Delivery', 8.90, 0.53, 5.00, 14.43, '', '2025-12-24 16:09:46', NULL, '2025-12-24 15:24:46', '2025-12-24 15:24:46'),
+(7, 1, 1, 'SF202512249356', 'Pending', 'Delivery', 14.90, 0.89, 5.00, 20.79, '', '2025-12-24 16:13:52', NULL, '2025-12-24 15:28:52', '2025-12-24 15:28:52'),
+(8, 1, 1, 'SF202512244615', 'Delivered', 'Delivery', 34.70, 2.08, 5.00, 41.78, '', '2025-12-24 16:15:47', NULL, '2025-12-24 15:30:47', '2025-12-24 15:58:54'),
+(11, 1, 1, 'SF202512245565', 'Pending', 'Delivery', 23.80, 1.43, 5.00, 30.23, '', '2025-12-24 17:06:58', NULL, '2025-12-24 16:21:58', '2025-12-24 16:21:58'),
+(12, 1, 1, 'SF202512243582', 'Pending', 'Delivery', 23.80, 1.43, 5.00, 30.23, '', '2025-12-24 17:11:02', NULL, '2025-12-24 16:26:02', '2025-12-24 16:26:02'),
+(13, 1, 1, 'SF202512240633', 'Pending', 'Delivery', 14.90, 0.89, 5.00, 20.79, '', '2025-12-24 17:11:45', NULL, '2025-12-24 16:26:45', '2025-12-24 16:26:45'),
+(14, 1, 1, 'SF202512284027', 'Pending', 'Delivery', 33.80, 2.03, 5.00, 40.83, '', '2025-12-28 09:09:07', NULL, '2025-12-28 08:24:07', '2025-12-28 08:24:07');
 
 -- --------------------------------------------------------
 
@@ -167,7 +203,17 @@ INSERT INTO `order_item` (`item_id`, `order_id`, `product_id`, `quantity`, `unit
 (2, 2, 4, 2, 8.90, 17.80, NULL, '2025-10-30 21:45:29'),
 (3, 3, 6, 3, 10.90, 32.70, NULL, '2025-10-30 21:53:34'),
 (4, 4, 14, 1, 14.90, 14.90, NULL, '2025-10-30 22:09:30'),
-(6, 5, 3, 2, 18.90, 37.80, NULL, '2025-11-12 12:06:04');
+(6, 5, 3, 2, 18.90, 37.80, NULL, '2025-11-12 12:06:04'),
+(7, 6, 4, 1, 8.90, 8.90, NULL, '2025-12-24 15:24:46'),
+(8, 7, 14, 1, 14.90, 14.90, NULL, '2025-12-24 15:28:52'),
+(9, 8, 6, 1, 10.90, 10.90, NULL, '2025-12-24 15:30:47'),
+(10, 8, 4, 1, 8.90, 8.90, NULL, '2025-12-24 15:30:47'),
+(11, 8, 14, 1, 14.90, 14.90, NULL, '2025-12-24 15:30:47'),
+(12, 12, 14, 1, 14.90, 14.90, NULL, '2025-12-24 16:26:02'),
+(13, 12, 4, 1, 8.90, 8.90, NULL, '2025-12-24 16:26:02'),
+(14, 13, 14, 1, 14.90, 14.90, NULL, '2025-12-24 16:26:45'),
+(15, 14, 6, 1, 10.90, 10.90, NULL, '2025-12-28 08:24:07'),
+(16, 14, 2, 1, 22.90, 22.90, NULL, '2025-12-28 08:24:07');
 
 -- --------------------------------------------------------
 
@@ -223,18 +269,18 @@ CREATE TABLE `product` (
 
 INSERT INTO `product` (`product_id`, `category_id`, `product_name`, `description`, `price`, `image`, `is_available`, `stock_quantity`, `preparation_time`, `is_featured`, `created_at`, `updated_at`) VALUES
 (1, 1, 'Rendang Beef', 'Tender beef cooked in rich coconut milk and spices', 25.90, 'rendang_beef.png', 1, 50, 15, 1, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
-(2, 1, 'Kung Pao Chicken', 'Spicy diced chicken with peanuts and vegetables', 22.90, 'kung_pau_chciken.png', 1, 45, 15, 1, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
+(2, 1, 'Kung Pao Chicken', 'Spicy diced chicken with peanuts and vegetables', 22.90, 'kung_pau_chciken.png', 1, 44, 15, 1, '2025-10-28 06:04:20', '2025-12-28 08:24:07'),
 (3, 1, 'Mapo Tofu', 'Spicy tofu with minced meat in Sichuan sauce', 18.90, 'mapo_toufu.png', 1, 38, 15, 0, '2025-10-28 06:04:20', '2025-11-12 12:06:04'),
-(4, 2, 'Char Siu Bao', 'Steamed BBQ pork buns', 8.90, 'char_siu_bao.png', 1, 30, 15, 1, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
+(4, 2, 'Char Siu Bao', 'Steamed BBQ pork buns', 8.90, 'char_siu_bao.png', 1, 27, 15, 1, '2025-10-28 06:04:20', '2025-12-24 16:26:02'),
 (5, 2, 'Siew Mai', 'Steamed pork and shrimp dumplings', 12.90, 'siew_mai.png', 1, 35, 15, 0, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
-(6, 2, 'Dumpling', 'Pan-fried dumplings with pork filling', 10.90, 'dumpling.png', 1, 22, 15, 0, '2025-10-28 06:04:20', '2025-10-30 21:53:34'),
+(6, 2, 'Dumpling', 'Pan-fried dumplings with pork filling', 10.90, 'dumpling.png', 1, 20, 15, 0, '2025-10-28 06:04:20', '2025-12-28 08:24:07'),
 (8, 3, 'Tea', 'Traditional Chinese tea', 5.90, 'tea.png', 1, 100, 15, 0, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
 (9, 3, 'Lime Juice', 'Refreshing lime juice', 7.90, 'lime_juice.png', 1, 80, 15, 0, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
 (10, 4, 'Taiyaki', 'Fish-shaped waffle with sweet filling', 8.90, 'taiyaki.png', 1, 20, 15, 1, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
 (11, 4, 'Tang Yuan', 'Sweet glutinous rice balls', 9.90, 'tang_yuan.png', 1, 25, 15, 0, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
 (12, 5, 'Nasi Ayam Geprek', 'Crispy chicken with rice and sambal', 16.90, 'nasi_ayam_geprek.png', 1, 40, 15, 1, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
 (13, 5, 'Nasi Campur', 'Mixed rice with various side dishes', 18.90, 'nasi_campur.png', 1, 35, 15, 0, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
-(14, 6, 'Char Kuey Teow', 'Stir-fried flat rice noodles', 14.90, 'char_kuey_teow.png', 1, 99, 15, 1, '2025-10-28 06:04:20', '2025-11-12 12:13:44'),
+(14, 6, 'Char Kuey Teow', 'Stir-fried flat rice noodles', 14.90, 'char_kuey_teow.png', 1, 95, 15, 1, '2025-10-28 06:04:20', '2025-12-24 16:26:45'),
 (15, 6, 'Mie Goreng', 'Indonesian fried noodles', 13.90, 'mie_goreng.png', 1, 30, 15, 0, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
 (16, 7, 'Wantan Soup', 'Clear soup with wonton dumplings', 12.90, 'wantan_soup.png', 1, 25, 15, 0, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
 (17, 2, 'test', 'test', 0.00, 'food_690973d78f0799.82262871.jpeg', 1, 0, 15, 0, '2025-11-04 03:32:39', '2025-11-04 03:33:12'),
@@ -257,6 +303,16 @@ CREATE TABLE `review` (
   `is_approved` tinyint(1) DEFAULT 1,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `review`
+--
+
+INSERT INTO `review` (`review_id`, `user_id`, `product_id`, `order_id`, `rating`, `comment`, `is_verified_purchase`, `is_approved`, `created_at`) VALUES
+(1, 1, 4, 2, 5, 'nice！', 1, 1, '2025-12-24 14:51:46'),
+(2, 1, 6, 8, 5, 'nice', 1, 1, '2025-12-24 15:30:59'),
+(3, 1, 4, 8, 5, 'nice', 1, 1, '2025-12-24 15:31:07'),
+(4, 1, 14, 8, 2, 'no to bad', 1, 1, '2025-12-24 15:31:19');
 
 -- --------------------------------------------------------
 
@@ -295,13 +351,6 @@ CREATE TABLE `shopping_cart` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `shopping_cart`
---
-
-INSERT INTO `shopping_cart` (`cart_id`, `user_id`, `product_id`, `quantity`, `special_instructions`, `created_at`, `updated_at`) VALUES
-(3, 1, 4, 1, NULL, '2025-11-17 17:09:05', '2025-12-10 17:01:55');
 
 -- --------------------------------------------------------
 
@@ -362,6 +411,15 @@ ALTER TABLE `category`
 ALTER TABLE `delivery_address`
   ADD PRIMARY KEY (`address_id`),
   ADD KEY `user_id` (`user_id`);
+
+--
+-- Indexes for table `dummy_bank`
+--
+ALTER TABLE `dummy_bank`
+  ADD PRIMARY KEY (`bank_id`),
+  ADD KEY `idx_bank_name` (`bank_name`),
+  ADD KEY `idx_card_number` (`card_number`),
+  ADD KEY `idx_is_active` (`is_active`);
 
 --
 -- Indexes for table `order`
@@ -454,16 +512,22 @@ ALTER TABLE `delivery_address`
   MODIFY `address_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
+-- AUTO_INCREMENT for table `dummy_bank`
+--
+ALTER TABLE `dummy_bank`
+  MODIFY `bank_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+
+--
 -- AUTO_INCREMENT for table `order`
 --
 ALTER TABLE `order`
-  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT for table `order_item`
 --
 ALTER TABLE `order_item`
-  MODIFY `item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
 -- AUTO_INCREMENT for table `payment`
@@ -481,7 +545,7 @@ ALTER TABLE `product`
 -- AUTO_INCREMENT for table `review`
 --
 ALTER TABLE `review`
-  MODIFY `review_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `review_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `security_questions`
@@ -493,7 +557,7 @@ ALTER TABLE `security_questions`
 -- AUTO_INCREMENT for table `shopping_cart`
 --
 ALTER TABLE `shopping_cart`
-  MODIFY `cart_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `cart_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT for table `user`

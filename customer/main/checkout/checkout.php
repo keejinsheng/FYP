@@ -111,19 +111,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     // Verify bank information against dummy_bank table first
                     // (We verify first because dummy_bank may have test dates that are in the past)
-                    $bank_verified = verifyBankDetails($bank_name, $cardholder_name, $card_number_clean, $expiry_date, $cvv_clean);
                     
-                    if (!$bank_verified) {
-                        $error_message = 'Invalid bank information. Please check your bank details and try again.';
+                    // Check if dummy_bank table exists
+                    $pdo_check = getDBConnection();
+                    $table_check = $pdo_check->query("SHOW TABLES LIKE 'dummy_bank'");
+                    if ($table_check->rowCount() == 0) {
+                        $error_message = 'Bank verification system is not set up. Please contact administrator or use Cash on Delivery.';
                     } else {
-                        // Only validate expiry date is not in the past if bank info is verified
-                        // (This allows test data with past dates to work)
-                        if ($year_num < $current_year) {
-                    $error_message = 'Expiry date year cannot be before the current year';
-                        } elseif ($year_num == $current_year && $month_num < $current_month) {
-                    $error_message = 'Expiry date cannot be in the past';
-                }
-            }
+                        $bank_verified = verifyBankDetails($bank_name, $cardholder_name, $card_number_clean, $expiry_date, $cvv_clean);
+                        
+                        if (!$bank_verified) {
+                            // Provide more helpful error message
+                            $error_message = 'Invalid bank information. Please check your bank details and try again. ';
+                            $error_message .= 'For testing, use one of the test accounts from the dummy_bank table.';
+                        } else {
+                            // Only validate expiry date is not in the past if bank info is verified
+                            // (This allows test data with past dates to work)
+                            if ($year_num < $current_year) {
+                                $error_message = 'Expiry date year cannot be before the current year';
+                            } elseif ($year_num == $current_year && $month_num < $current_month) {
+                                $error_message = 'Expiry date cannot be in the past';
+                            }
+                        }
+                    }
         }
             }
         }
