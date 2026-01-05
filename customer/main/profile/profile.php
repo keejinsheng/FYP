@@ -47,6 +47,28 @@ function handleAvatarUpload($fileInput, $oldImage = null) {
     return ['success' => $oldImage];
 }
 
+// API endpoint to verify current password (AJAX call)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['verify_current_password'])) {
+    $input_password = $_POST['current_password'];
+    $user_id = getCurrentUserId();
+    
+    // Get user's current password hash
+    $stmt = $pdo->prepare("SELECT password_hash FROM user WHERE user_id = ?");
+    $stmt->execute([$user_id]);
+    $user_data = $stmt->fetch();
+    
+    if ($user_data && isset($user_data['password_hash'])) {
+        if (password_verify($input_password, $user_data['password_hash'])) {
+            echo json_encode(['valid' => true]);
+        } else {
+            echo json_encode(['valid' => false]);
+        }
+    } else {
+        echo json_encode(['valid' => false, 'error' => 'User not found']);
+    }
+    exit();
+}
+
 // Handle profile update
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action'])) {
@@ -163,61 +185,76 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 break;
 
-case 'change_password':
-    $current_password = $_POST['current_password'];
-    $new_password = $_POST['new_password'];
-    $confirm_password = $_POST['confirm_password'];
-    
-    // 验证输入
-    if (empty($current_password) || empty($new_password) || empty($confirm_password)) {
-        $error_message = "Please fill in all password fields!";
-    } elseif ($new_password !== $confirm_password) {
-        $error_message = "New password and confirmation password do not match!";
-    } elseif (strlen($new_password) < 6) {
-        $error_message = "Password must be at least 6 characters long";
-    } elseif (!preg_match('/[a-zA-Z]/', $new_password)) {
-        $error_message = "Password must contain at least one letter";
-    } elseif (!preg_match('/[0-9]/', $new_password)) {
-        $error_message = "Password must contain at least one number";
-    } else {
-        try {
-            // 先检查用户是否存在
-            $stmt = $pdo->prepare("SELECT * FROM user WHERE user_id = ?");
-            $stmt->execute([$user_id]);
-            $user_data = $stmt->fetch();
-            
-            if (!$user_data) {
-                $error_message = "User does not exist! User ID: " . $user_id;
-            } else {
-                // 检查password_hash字段是否存在
-                if (!isset($user_data['password_hash'])) {
-                    $error_message = "Database error! The password_hash field does not exist.";
+            case 'change_password':
+                $current_password = $_POST['current_password'];
+                $new_password = $_POST['new_password'];
+                $confirm_password = $_POST['confirm_password'];
+                
+                // 验证输入
+                if (empty($current_password) || empty($new_password) || empty($confirm_password)) {
+                    $error_message = "Please fill in all password fields!";
+                } 
+                // 验证1: 新密码不能与当前密码相同
+                elseif ($current_password === $new_password) {
+                    $error_message = "New password cannot be the same as current password!";
+                }
+                // 验证2: 确认密码匹配
+                elseif ($new_password !== $confirm_password) {
+                    $error_message = "New password and confirmation password do not match!";
+                }
+                // 验证3: 密码长度
+                elseif (strlen($new_password) < 6) {
+                    $error_message = "Password must be at least 6 characters long";
+                }
+                // 验证4: 密码复杂度
+                elseif (!preg_match('/[a-zA-Z]/', $new_password)) {
+                    $error_message = "Password must contain at least one letter";
+                }
+                elseif (!preg_match('/[0-9]/', $new_password)) {
+                    $error_message = "Password must contain at least one number";
                 } else {
-                    // 验证当前密码 - 使用 password_hash 字段
-                    if (password_verify($current_password, $user_data['password_hash'])) {
-                        // 当前密码正确，更新密码 - 更新 password_hash 字段
-                        $hashed_new_password = password_hash($new_password, PASSWORD_DEFAULT);
-                        $update_stmt = $pdo->prepare("UPDATE user SET password_hash = ? WHERE user_id = ?");
+                    try {
+                        // 先检查用户是否存在
+                        $stmt = $pdo->prepare("SELECT * FROM user WHERE user_id = ?");
+                        $stmt->execute([$user_id]);
+                        $user_data = $stmt->fetch();
                         
-                        if ($update_stmt->execute([$hashed_new_password, $user_id])) {
-                            $success_message = "Password changed successfully!";
+                        if (!$user_data) {
+                            $error_message = "User does not exist! User ID: " . $user_id;
                         } else {
-                            $error_message = "Password change failed. Please try again later.";
+                            // 检查password_hash字段是否存在
+                            if (!isset($user_data['password_hash'])) {
+                                $error_message = "Database error! The password_hash field does not exist.";
+                            } else {
+                                // 验证当前密码 - 使用 password_hash 字段
+                                if (password_verify($current_password, $user_data['password_hash'])) {
+                                    // 再次验证新密码是否与当前密码相同（通过哈希验证）
+                                    if (password_verify($new_password, $user_data['password_hash'])) {
+                                        $error_message = "New password cannot be the same as current password!";
+                                    } else {
+                                        // 当前密码正确，更新密码 - 更新 password_hash 字段
+                                        $hashed_new_password = password_hash($new_password, PASSWORD_DEFAULT);
+                                        $update_stmt = $pdo->prepare("UPDATE user SET password_hash = ? WHERE user_id = ?");
+                                        
+                                        if ($update_stmt->execute([$hashed_new_password, $user_id])) {
+                                            $success_message = "Password changed successfully!";
+                                        } else {
+                                            $error_message = "Password change failed. Please try again later.";
+                                        }
+                                    }
+                                } else {
+                                    $error_message = "Current password is incorrect!";
+                                }
+                            }
                         }
-                    } else {
-                        $error_message = "Current password is incorrect!";
+                    } catch (PDOException $e) {
+                        // 显示详细的错误信息用于调试
+                        $error_message = "Database error: " . $e->getMessage();
+                    } catch (Exception $e) {
+                        $error_message = "System error: " . $e->getMessage();
                     }
                 }
-            }
-        } catch (PDOException $e) {
-            // 显示详细的错误信息用于调试
-            $error_message = "Database error: " . $e->getMessage();
-        } catch (Exception $e) {
-            $error_message = "System error: " . $e->getMessage();
-        }
-    }
-    break;
-
+                break;
         }
     }
 }
@@ -244,6 +281,135 @@ $addresses = $stmt->fetchAll();
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="../../includes/styles.css">
     <link rel="stylesheet" href="profile.css">
+    <style>
+        .password-match-message {
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin-top: 5px;
+            font-size: 0.9rem;
+            display: none;
+        }
+        
+        .password-match-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .password-match-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .password-strength-container {
+            margin-top: 10px;
+        }
+        
+        .password-strength-bar {
+            display: flex;
+            gap: 3px;
+            margin-bottom: 5px;
+        }
+        
+        .password-strength-segment {
+            flex: 1;
+            height: 5px;
+            background-color: #e9ecef;
+            border-radius: 2px;
+        }
+        
+        .password-strength-segment.weak {
+            background-color: #dc3545;
+        }
+        
+        .password-strength-segment.medium {
+            background-color: #ffc107;
+        }
+        
+        .password-strength-segment.strong {
+            background-color: #28a745;
+        }
+        
+        .password-strength-text {
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        .password-strength-text.empty {
+            color: #6c757d;
+        }
+        
+        .password-strength-text.weak {
+            color: #dc3545;
+        }
+        
+        .password-strength-text.medium {
+            color: #ffc107;
+        }
+        
+        .password-strength-text.strong {
+            color: #28a745;
+        }
+        
+        .password-requirements {
+            margin-top: 10px;
+        }
+        
+        .requirement {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            margin-bottom: 3px;
+        }
+        
+        .requirement.invalid {
+            color: #6c757d;
+        }
+        
+        .requirement.valid {
+            color: #28a745;
+        }
+        
+        .requirement.invalid span:first-child {
+            color: #6c757d;
+        }
+        
+        .requirement.valid span:first-child {
+            color: #28a745;
+        }
+        
+        #currentPasswordMessage {
+            margin-top: 5px;
+            font-size: 0.9rem;
+            padding: 8px 12px;
+            border-radius: 4px;
+            display: none;
+        }
+        
+        .form-group input:focus {
+            border-color: #007bff;
+            outline: none;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+        
+        .form-group input.invalid {
+            border-color: #dc3545;
+        }
+        
+        .form-group input.valid {
+            border-color: #28a745;
+        }
+        
+        .btn-success {
+            background-color: #28a745 !important;
+        }
+        
+        .btn-success:hover {
+            background-color: #218838 !important;
+        }
+    </style>
 </head>
 <body>
     <?php include_once __DIR__ . '/../../includes/header.php'; ?>
@@ -320,50 +486,52 @@ $addresses = $stmt->fetchAll();
                     </div>
                     <button type="submit" class="submit-btn">Update Profile</button>
                 </form>
-                   <!-- 添加修改密码部分 -->
-<div class="change-password-section" style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #eee;">
-    <h3 class="change-password-heading"><i class="fas fa-lock"></i> Change Password</h3>
-    <form method="POST" id="changePasswordForm">
-        <input type="hidden" name="action" value="change_password">
-        <div class="form-group">
-            <label for="current_password">Current Password</label>
-            <input type="password" id="current_password" name="current_password" required>
-        </div>
-        <div class="form-group">
-            <label for="new_password">New Password</label>
-            <input type="password" id="new_password" name="new_password" required minlength="6">
-            <div class="password-strength-container">
-                <div class="password-strength-bar">
-                    <div class="password-strength-segment" id="strength-seg-1"></div>
-                    <div class="password-strength-segment" id="strength-seg-2"></div>
-                    <div class="password-strength-segment" id="strength-seg-3"></div>
-                    <div class="password-strength-segment" id="strength-seg-4"></div>
+                
+                <!-- Change Password Section -->
+                <div class="change-password-section" style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #eee;">
+                    <h3 class="change-password-heading"><i class="fas fa-lock"></i> Change Password</h3>
+                    <form method="POST" id="changePasswordForm">
+                        <input type="hidden" name="action" value="change_password">
+                        <div class="form-group">
+                            <label for="current_password">Current Password</label>
+                            <input type="password" id="current_password" name="current_password" required>
+                            <div id="currentPasswordMessage" class="password-match-message"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="new_password">New Password</label>
+                            <input type="password" id="new_password" name="new_password" required minlength="6">
+                            <div class="password-strength-container">
+                                <div class="password-strength-bar">
+                                    <div class="password-strength-segment" id="strength-seg-1"></div>
+                                    <div class="password-strength-segment" id="strength-seg-2"></div>
+                                    <div class="password-strength-segment" id="strength-seg-3"></div>
+                                    <div class="password-strength-segment" id="strength-seg-4"></div>
+                                </div>
+                                <div class="password-strength-text empty" id="strength-text"></div>
+                                <div class="password-requirements">
+                                    <div class="requirement invalid" id="req-length">
+                                        <span>✓</span>
+                                        <span>At least 6 characters</span>
+                                    </div>
+                                    <div class="requirement invalid" id="req-letter">
+                                        <span>✓</span>
+                                        <span>Contains at least one letter</span>
+                                    </div>
+                                    <div class="requirement invalid" id="req-number">
+                                        <span>✓</span>
+                                        <span>Contains at least one number</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="confirm_password">Confirm New Password</label>
+                            <input type="password" id="confirm_password" name="confirm_password" required minlength="6">
+                            <div id="passwordMatchMessage" class="password-match-message"></div>
+                        </div>
+                        <button type="submit" class="submit-btn" style="background-color: #28a745;">Change Password</button>
+                    </form>
                 </div>
-                <div class="password-strength-text empty" id="strength-text"></div>
-                <div class="password-requirements">
-                    <div class="requirement invalid" id="req-length">
-                        <span>✓</span>
-                        <span>At least 6 characters</span>
-                    </div>
-                    <div class="requirement invalid" id="req-letter">
-                        <span>✓</span>
-                        <span>Contains at least one letter</span>
-                    </div>
-                    <div class="requirement invalid" id="req-number">
-                        <span>✓</span>
-                        <span>Contains at least one number</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="form-group">
-            <label for="confirm_password">Confirm New Password</label>
-            <input type="password" id="confirm_password" name="confirm_password" required minlength="6">
-            <div id="passwordMatchMessage" class="password-match-message" style="display: none; margin-top: 0.5rem; font-size: 0.9rem;"></div>
-        </div>
-        <button type="submit" class="submit-btn" style="background-color: #28a745;">Change Password</button>
-    </form>
-</div>
             </div>
 
             <!-- Delivery Addresses -->
@@ -406,7 +574,7 @@ $addresses = $stmt->fetchAll();
         </div>
     </div>
 
-    <!-- Add Address Modal (standardized and compact) -->
+    <!-- Add Address Modal -->
     <div id="addAddressModal" class="modal" style="display: none;">
         <div class="modal-content">
             <h3 style="margin-bottom: 1rem;">Add New Address</h3>
@@ -488,13 +656,70 @@ $addresses = $stmt->fetchAll();
                     <button type="button" class="btn-cancel" onclick="hideEditAddressForm()">Cancel</button>
                 </div>
             </form>
-
         </div>
     </div>
 
     <?php include_once __DIR__ . '/../../includes/footer.php'; ?>
 
     <script>
+        // ====== Current Password Real-time Validation ======
+        let isCurrentPasswordValid = false;
+
+        async function verifyCurrentPassword(password) {
+            if (!password) {
+                return { valid: false };
+            }
+            
+            try {
+                const response = await fetch(window.location.href, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: 'verify_current_password=1&current_password=' + encodeURIComponent(password)
+                });
+                
+                const result = await response.json();
+                return result;
+            } catch (error) {
+                console.error('Error verifying password:', error);
+                return { valid: false, error: 'Network error' };
+            }
+        }
+
+        function updateCurrentPasswordValidation(isValid, message = '') {
+            const messageDiv = document.getElementById('currentPasswordMessage');
+            const currentPasswordInput = document.getElementById('current_password');
+            
+            if (messageDiv) {
+                if (currentPasswordInput.value.trim() === '') {
+                    messageDiv.style.display = 'none';
+                    messageDiv.textContent = '';
+                } else {
+                    messageDiv.style.display = 'block';
+                    messageDiv.textContent = message;
+                    messageDiv.className = 'password-match-message ' + 
+                        (isValid ? 'password-match-success' : 'password-match-error');
+                }
+            }
+            
+            // 更新验证状态
+            isCurrentPasswordValid = isValid;
+            
+            // 更新密码字段的视觉状态
+            if (currentPasswordInput) {
+                if (currentPasswordInput.value.trim() === '') {
+                    currentPasswordInput.style.borderColor = '';
+                } else {
+                    currentPasswordInput.style.borderColor = isValid ? '#28a745' : '#dc3545';
+                }
+            }
+            
+            // 触发整体密码验证更新
+            validateAllPasswordFields();
+        }
+
+        // ====== Address Management Functions ======
         function openEditAddressForm(address) {
             document.getElementById('edit_address_id').value = address.address_id;
             document.getElementById('edit_address_line1').value = address.address_line1 || '';
@@ -506,9 +731,7 @@ $addresses = $stmt->fetchAll();
             document.getElementById('edit_is_default').checked = !!Number(address.is_default);
             document.getElementById('editAddressModal').style.display = 'flex';
             document.body.classList.add('modal-open');
-
-            // sync button color based on default toggle
-            if (typeof syncDefaultButtons === 'function') { syncDefaultButtons(); }
+            syncDefaultButtons();
         }
 
         function deleteAddress(addressId) {
@@ -578,208 +801,322 @@ $addresses = $stmt->fetchAll();
         // Initial bind
         syncDefaultButtons();
 
-// ====== Password Strength Indicator ======
-(function() {
-    const passwordInput = document.getElementById('new_password');
-    if (!passwordInput) return;
-    
-    const strengthSegments = [
-        document.getElementById('strength-seg-1'),
-        document.getElementById('strength-seg-2'),
-        document.getElementById('strength-seg-3'),
-        document.getElementById('strength-seg-4')
-    ];
-    const strengthText = document.getElementById('strength-text');
-    const reqLength = document.getElementById('req-length');
-    const reqLetter = document.getElementById('req-letter');
-    const reqNumber = document.getElementById('req-number');
+        // ====== Password Strength Indicator ======
+        (function() {
+            const passwordInput = document.getElementById('new_password');
+            if (!passwordInput) return;
+            
+            const strengthSegments = [
+                document.getElementById('strength-seg-1'),
+                document.getElementById('strength-seg-2'),
+                document.getElementById('strength-seg-3'),
+                document.getElementById('strength-seg-4')
+            ];
+            const strengthText = document.getElementById('strength-text');
+            const reqLength = document.getElementById('req-length');
+            const reqLetter = document.getElementById('req-letter');
+            const reqNumber = document.getElementById('req-number');
 
-    function checkPasswordStrength(password) {
-        let strength = 0;
-        let strengthLevel = 'empty';
-        let strengthLabel = '';
+            function checkPasswordStrength(password) {
+                let strength = 0;
+                let strengthLevel = 'empty';
+                let strengthLabel = '';
 
-        // 检查各项要求
-        const hasLength = password.length >= 6;
-        const hasLetter = /[a-zA-Z]/.test(password);
-        const hasNumber = /[0-9]/.test(password);
+                // 检查各项要求
+                const hasLength = password.length >= 6;
+                const hasLetter = /[a-zA-Z]/.test(password);
+                const hasNumber = /[0-9]/.test(password);
 
-        // 更新要求指示器
-        if (hasLength) {
-            reqLength.classList.remove('invalid');
-            reqLength.classList.add('valid');
-        } else {
-            reqLength.classList.remove('valid');
-            reqLength.classList.add('invalid');
-        }
-
-        if (hasLetter) {
-            reqLetter.classList.remove('invalid');
-            reqLetter.classList.add('valid');
-        } else {
-            reqLetter.classList.remove('valid');
-            reqLetter.classList.add('invalid');
-        }
-
-        if (hasNumber) {
-            reqNumber.classList.remove('invalid');
-            reqNumber.classList.add('valid');
-        } else {
-            reqNumber.classList.remove('valid');
-            reqNumber.classList.add('invalid');
-        }
-
-        if (password.length === 0) {
-            strengthLevel = 'empty';
-            strengthLabel = '';
-        } else {
-            // 长度检查
-            if (password.length >= 8) {
-                strength += 1;
-            } else if (password.length >= 6) {
-                strength += 0.5;
-            }
-
-            // 包含小写字母
-            if (/[a-z]/.test(password)) {
-                strength += 1;
-            }
-
-            // 包含大写字母
-            if (/[A-Z]/.test(password)) {
-                strength += 1;
-            }
-
-            // 包含数字
-            if (/[0-9]/.test(password)) {
-                strength += 1;
-            }
-
-            // 包含特殊字符
-            if (/[^a-zA-Z0-9]/.test(password)) {
-                strength += 1;
-            }
-
-            // 确定强度等级
-            if (strength <= 2) {
-                strengthLevel = 'weak';
-                strengthLabel = 'weak';
-            } else if (strength <= 3.5) {
-                strengthLevel = 'medium';
-                strengthLabel = 'medium';
-            } else {
-                strengthLevel = 'strong';
-                strengthLabel = 'strong';
-            }
-        }
-
-        // 更新强度条
-        strengthSegments.forEach((seg, index) => {
-            seg.classList.remove('weak', 'medium', 'strong');
-            if (strengthLevel === 'empty') {
-                // 不显示任何颜色
-            } else if (strengthLevel === 'weak') {
-                if (index === 0) {
-                    seg.classList.add('weak');
+                // 更新要求指示器
+                if (hasLength) {
+                    reqLength.classList.remove('invalid');
+                    reqLength.classList.add('valid');
+                } else {
+                    reqLength.classList.remove('valid');
+                    reqLength.classList.add('invalid');
                 }
-            } else if (strengthLevel === 'medium') {
-                if (index <= 1) {
-                    seg.classList.add('medium');
+
+                if (hasLetter) {
+                    reqLetter.classList.remove('invalid');
+                    reqLetter.classList.add('valid');
+                } else {
+                    reqLetter.classList.remove('valid');
+                    reqLetter.classList.add('invalid');
                 }
-            } else if (strengthLevel === 'strong') {
-                seg.classList.add('strong');
+
+                if (hasNumber) {
+                    reqNumber.classList.remove('invalid');
+                    reqNumber.classList.add('valid');
+                } else {
+                    reqNumber.classList.remove('valid');
+                    reqNumber.classList.add('invalid');
+                }
+
+                if (password.length === 0) {
+                    strengthLevel = 'empty';
+                    strengthLabel = '';
+                } else {
+                    // 长度检查
+                    if (password.length >= 8) {
+                        strength += 1;
+                    } else if (password.length >= 6) {
+                        strength += 0.5;
+                    }
+
+                    // 包含小写字母
+                    if (/[a-z]/.test(password)) {
+                        strength += 1;
+                    }
+
+                    // 包含大写字母
+                    if (/[A-Z]/.test(password)) {
+                        strength += 1;
+                    }
+
+                    // 包含数字
+                    if (/[0-9]/.test(password)) {
+                        strength += 1;
+                    }
+
+                    // 包含特殊字符
+                    if (/[^a-zA-Z0-9]/.test(password)) {
+                        strength += 1;
+                    }
+
+                    // 确定强度等级
+                    if (strength <= 2) {
+                        strengthLevel = 'weak';
+                        strengthLabel = 'weak';
+                    } else if (strength <= 3.5) {
+                        strengthLevel = 'medium';
+                        strengthLabel = 'medium';
+                    } else {
+                        strengthLevel = 'strong';
+                        strengthLabel = 'strong';
+                    }
+                }
+
+                // 更新强度条
+                strengthSegments.forEach((seg, index) => {
+                    seg.classList.remove('weak', 'medium', 'strong');
+                    if (strengthLevel === 'empty') {
+                        // 不显示任何颜色
+                    } else if (strengthLevel === 'weak') {
+                        if (index === 0) {
+                            seg.classList.add('weak');
+                        }
+                    } else if (strengthLevel === 'medium') {
+                        if (index <= 1) {
+                            seg.classList.add('medium');
+                        }
+                    } else if (strengthLevel === 'strong') {
+                        seg.classList.add('strong');
+                    }
+                });
+
+                // 更新文字
+                strengthText.textContent = strengthLabel;
+                strengthText.className = 'password-strength-text ' + strengthLevel;
+            }
+
+            passwordInput.addEventListener('input', function() {
+                checkPasswordStrength(this.value);
+            });
+
+            // 初始化
+            checkPasswordStrength(passwordInput.value);
+        })();
+
+        // ====== Unified Password Validation ======
+        function validateAllPasswordFields() {
+            const currentPassword = document.getElementById('current_password').value;
+            const newPassword = document.getElementById('new_password').value;
+            const confirmPassword = document.getElementById('confirm_password').value;
+            const messageDiv = document.getElementById('passwordMatchMessage');
+            const submitBtn = document.querySelector('#changePasswordForm .submit-btn');
+            
+            // 重置状态
+            if (messageDiv) {
+                messageDiv.style.display = 'none';
+                messageDiv.textContent = '';
+                messageDiv.className = 'password-match-message';
+            }
+            
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = '1';
+                submitBtn.style.cursor = 'pointer';
+            }
+            
+            // 如果所有字段都为空，直接返回
+            if (!currentPassword && !newPassword && !confirmPassword) {
+                return true;
+            }
+            
+            let isValid = true;
+            let errorMessage = '';
+            
+            // 新增检查：当前密码是否正确
+            if (currentPassword && !isCurrentPasswordValid) {
+                errorMessage = '✗ Please enter the correct current password first';
+                isValid = false;
+            }
+            // 检查1: 新旧密码是否相同
+            else if (currentPassword && newPassword && currentPassword === newPassword) {
+                errorMessage = '✗ New password cannot be the same as current password!';
+                isValid = false;
+            }
+            // 检查2: 确认密码是否匹配
+            else if (newPassword && confirmPassword && newPassword !== confirmPassword) {
+                errorMessage = '✗ Passwords do not match!';
+                isValid = false;
+            }
+            // 检查3: 密码长度
+            else if (newPassword && newPassword.length < 6) {
+                errorMessage = '✗ Password must be at least 6 characters!';
+                isValid = false;
+            }
+            // 检查4: 密码复杂度 - 至少一个字母
+            else if (newPassword && !/[a-zA-Z]/.test(newPassword)) {
+                errorMessage = '✗ Password must contain at least one letter!';
+                isValid = false;
+            }
+            // 检查5: 密码复杂度 - 至少一个数字
+            else if (newPassword && !/[0-9]/.test(newPassword)) {
+                errorMessage = '✗ Password must contain at least one number!';
+                isValid = false;
+            }
+            // 检查6: 所有验证通过
+            else if (currentPassword && newPassword && confirmPassword && newPassword === confirmPassword && isCurrentPasswordValid) {
+                errorMessage = '✓ All password requirements met!';
+                isValid = true;
+            }
+            
+            // 显示消息
+            if (messageDiv && errorMessage) {
+                messageDiv.style.display = 'block';
+                messageDiv.textContent = errorMessage;
+                messageDiv.className = 'password-match-message ' + 
+                    (errorMessage.startsWith('✓') ? 'password-match-success' : 'password-match-error');
+            }
+            
+            // 更新按钮状态
+            if (submitBtn) {
+                const isFormValid = isValid && isCurrentPasswordValid && currentPassword && newPassword && confirmPassword;
+                submitBtn.disabled = !isFormValid;
+                submitBtn.style.opacity = isFormValid ? '1' : '0.6';
+                submitBtn.style.cursor = isFormValid ? 'pointer' : 'not-allowed';
+            }
+            
+            return isValid;
+        }
+
+        // ====== Event Listeners for Password Fields ======
+        ['current_password', 'new_password', 'confirm_password'].forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.addEventListener('input', validateAllPasswordFields);
             }
         });
 
-        // 更新文字
-        strengthText.textContent = strengthLabel;
-        strengthText.className = 'password-strength-text ' + strengthLevel;
-    }
-
-    passwordInput.addEventListener('input', function() {
-        checkPasswordStrength(this.value);
-    });
-
-    // 初始化
-    checkPasswordStrength(passwordInput.value);
-})();
-
-// 实时密码匹配验证
-function checkPasswordMatch() {
-    const newPassword = document.getElementById('new_password').value;
-    const confirmPassword = document.getElementById('confirm_password').value;
-    const messageDiv = document.getElementById('passwordMatchMessage');
-    const confirmInput = document.getElementById('confirm_password');
-    
-    if (confirmPassword.length === 0) {
-        messageDiv.style.display = 'none';
-        confirmInput.style.borderColor = '#ccc';
-        return;
-    }
-    
-    if (newPassword.length === 0) {
-        messageDiv.style.display = 'none';
-        confirmInput.style.borderColor = '#ccc';
-        return;
-    }
-    
-    messageDiv.style.display = 'block';
-    
-    if (newPassword === confirmPassword) {
-        messageDiv.textContent = '✓ Passwords match';
-        messageDiv.className = 'password-match-message password-match-success';
-        confirmInput.style.borderColor = '#28a745';
-    } else {
-        messageDiv.textContent = '✗ Passwords do not match';
-        messageDiv.className = 'password-match-message password-match-error';
-        confirmInput.style.borderColor = '#dc3545';
-    }
-}
-
-// 监听新密码和确认密码输入
-document.getElementById('new_password')?.addEventListener('input', checkPasswordMatch);
-document.getElementById('confirm_password')?.addEventListener('input', checkPasswordMatch);
-
-// 密码表单验证
-document.getElementById('changePasswordForm')?.addEventListener('submit', function(e) {
-    const newPassword = document.getElementById('new_password').value;
-    const confirmPassword = document.getElementById('confirm_password').value;
-    
-    if (newPassword !== confirmPassword) {
-        e.preventDefault();
-        alert('New password and confirmation password do not match!');
-        return false;
-    }
-    
-    if (newPassword.length < 6) {
-        e.preventDefault();
-        alert('Password must be at least 6 characters long!');
-        return false;
-    }
-});
-
-// Avatar preview function
-function previewAvatar(input) {
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const preview = document.getElementById('avatarPreview');
-            // Check if it's an image or placeholder div
-            if (preview.tagName === 'IMG') {
-                preview.src = e.target.result;
-            } else {
-                // Replace placeholder with image
-                const img = document.createElement('img');
-                img.id = 'avatarPreview';
-                img.className = 'avatar-image';
-                img.src = e.target.result;
-                img.alt = 'Profile Avatar';
-                preview.parentNode.replaceChild(img, preview);
+        // ====== Current Password Input Listener with Debounce ======
+        let currentPasswordTimeout;
+        document.getElementById('current_password')?.addEventListener('input', function(e) {
+            const password = this.value.trim();
+            
+            // 清除之前的定时器
+            if (currentPasswordTimeout) {
+                clearTimeout(currentPasswordTimeout);
             }
-        };
-        reader.readAsDataURL(input.files[0]);
-    }
-}
-</script>
+            
+            // 如果为空，直接更新状态
+            if (!password) {
+                updateCurrentPasswordValidation(false, '');
+                return;
+            }
+            
+            // 显示正在验证的消息
+            updateCurrentPasswordValidation(false, 'Checking...');
+            
+            // 延迟验证，避免频繁请求
+            currentPasswordTimeout = setTimeout(async () => {
+                const result = await verifyCurrentPassword(password);
+                
+                if (result.valid) {
+                    updateCurrentPasswordValidation(true, '✓ Current password is correct');
+                } else {
+                    updateCurrentPasswordValidation(false, '✗ Current password is incorrect');
+                }
+            }, 500); // 500ms 延迟
+        });
+
+        // ====== Form Submission Validation ======
+        document.getElementById('changePasswordForm')?.addEventListener('submit', function(e) {
+            // 阻止表单提交以进行最终验证
+            e.preventDefault();
+            
+            const currentPassword = document.getElementById('current_password').value;
+            const newPassword = document.getElementById('new_password').value;
+            const confirmPassword = document.getElementById('confirm_password').value;
+            
+            // 最终验证
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                alert('Please fill in all password fields!');
+                return false;
+            }
+            
+            if (!isCurrentPasswordValid) {
+                alert('Current password is incorrect!');
+                document.getElementById('current_password').focus();
+                return false;
+            }
+            
+            if (!validateAllPasswordFields()) {
+                const messageDiv = document.getElementById('passwordMatchMessage');
+                if (messageDiv && messageDiv.textContent) {
+                    const errorText = messageDiv.textContent.replace('✗ ', '');
+                    alert(errorText);
+                }
+                return false;
+            }
+            
+            // 所有验证通过，手动提交表单
+            this.submit();
+            return true;
+        });
+
+        // ====== Avatar Preview Function ======
+        function previewAvatar(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('avatarPreview');
+                    // Check if it's an image or placeholder div
+                    if (preview.tagName === 'IMG') {
+                        preview.src = e.target.result;
+                    } else {
+                        // Replace placeholder with image
+                        const img = document.createElement('img');
+                        img.id = 'avatarPreview';
+                        img.className = 'avatar-image';
+                        img.src = e.target.result;
+                        img.alt = 'Profile Avatar';
+                        preview.parentNode.replaceChild(img, preview);
+                    }
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // Initialize current password validation on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPassword = document.getElementById('current_password').value;
+            if (currentPassword) {
+                // Trigger validation if there's already text in the field
+                const event = new Event('input');
+                document.getElementById('current_password').dispatchEvent(event);
+            }
+        });
+    </script>
 </body>
 </html>

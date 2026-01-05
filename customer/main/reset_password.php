@@ -40,6 +40,26 @@ try {
     exit;
 }
 
+// 在 reset_password.php 的 POST 处理部分添加：
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $new_password = $_POST['new_password'];
+    $confirm_password = $_POST['confirm_password'];
+    
+    // 验证新密码长度
+    if (strlen($new_password) < 6) {
+        $error_message = "Password must be at least 6 characters.";
+    }
+    // 验证密码复杂度
+    elseif (!preg_match('/[A-Za-z]/', $new_password) || !preg_match('/\d/', $new_password)) {
+        $error_message = "Password must contain at least one letter and one number.";
+    }
+    // 验证密码匹配
+    elseif ($new_password !== $confirm_password) {
+        $error_message = "Passwords do not match.";
+    } else {
+        // 继续处理...
+    }
+}
 // 处理密码重置
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $new_password = $_POST['new_password'];
