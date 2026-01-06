@@ -387,12 +387,13 @@ $customers = $stmt->fetchAll();
             color: var(--danger-color);
         }
         .success-message {
-            text-align: center;
             padding: 1rem;
-            color: var(--success-color);
+            border-radius: var(--border-radius);
+            margin-bottom: 1.5rem;
             background: rgba(40, 167, 69, 0.1);
-            border-radius: 6px;
-            margin-bottom: 1rem;
+            border: 1px solid var(--success-color);
+            color: var(--success-color);
+            text-align: left;
             display: none;
         }
         .success-message.show {

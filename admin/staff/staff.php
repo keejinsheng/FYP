@@ -137,6 +137,21 @@ $admins = $stmt->fetchAll();
         .no-results.show {
             display: block;
         }
+        .alert {
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+        }
+        .alert.success {
+            background: rgba(40, 167, 69, 0.1);
+            border: 1px solid #28a745;
+            color: #28a745;
+        }
+        .alert.error {
+            background: rgba(220, 53, 69, 0.1);
+            border: 1px solid #dc3545;
+            color: #dc3545;
+        }
     </style>
 </head>
 <body>
@@ -155,8 +170,12 @@ $admins = $stmt->fetchAll();
             <h1>Admin Management</h1>
             <button class="btn" onclick="openCreate()"><i class="fas fa-user-plus"></i> New Admin</button>
         </div>
-        <?php if ($success_message): ?><div style="color:#28a745; margin-bottom:1rem;"><?php echo htmlspecialchars($success_message); ?></div><?php endif; ?>
-        <?php if ($error_message): ?><div style="color:#dc3545; margin-bottom:1rem;"><?php echo htmlspecialchars($error_message); ?></div><?php endif; ?>
+        <?php if ($success_message): ?>
+            <div class="alert success"><?php echo htmlspecialchars($success_message); ?></div>
+        <?php endif; ?>
+        <?php if ($error_message): ?>
+            <div class="alert error"><?php echo htmlspecialchars($error_message); ?></div>
+        <?php endif; ?>
 
         <div class="search-container">
             <div class="search-box">

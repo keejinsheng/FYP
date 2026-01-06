@@ -125,9 +125,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             color: var(--primary-color);
         }
         .alert-success {
-            background: rgba(76, 175, 80, 0.1);
-            border: 1px solid #4CAF50;
-            color: #4CAF50;
+            background: rgba(40, 167, 69, 0.1);
+            border: 1px solid #28a745;
+            color: #28a745;
         }
         .form-group {
             margin-bottom: 1.5rem;
