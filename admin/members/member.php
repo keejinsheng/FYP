@@ -387,12 +387,13 @@ $customers = $stmt->fetchAll();
             color: var(--danger-color);
         }
         .success-message {
-            text-align: center;
             padding: 1rem;
-            color: var(--success-color);
+            border-radius: var(--border-radius);
+            margin-bottom: 1.5rem;
             background: rgba(40, 167, 69, 0.1);
-            border-radius: 6px;
-            margin-bottom: 1rem;
+            border: 1px solid var(--success-color);
+            color: var(--success-color);
+            text-align: left;
             display: none;
         }
         .success-message.show {
@@ -455,8 +456,6 @@ $customers = $stmt->fetchAll();
                 <tbody>
                     <?php foreach ($customers as $c): ?>
                         <tr data-customer-id="<?php echo (int)$c['user_id']; ?>" 
-                            data-customer-name="<?php echo htmlspecialchars(strtolower($c['first_name'] . ' ' . $c['last_name'])); ?>"
-                            data-customer-email="<?php echo htmlspecialchars(strtolower($c['email'])); ?>">
                             data-customer-name="<?php echo htmlspecialchars(strtolower($c['first_name'] . ' ' . $c['last_name'])); ?>"
                             data-customer-email="<?php echo htmlspecialchars(strtolower($c['email'])); ?>">
                             <td><?php echo (int)$c['user_id']; ?></td>
@@ -727,7 +726,6 @@ $customers = $stmt->fetchAll();
         // Search functionality
         function filterCustomers() {
             const input = document.getElementById('customerSearch');
-            const filter = input.value.toLowerCase().trim();
             const filter = input.value.toLowerCase().trim();
             const table = document.getElementById('customersTable');
             const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');

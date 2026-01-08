@@ -619,6 +619,28 @@ body.modal-open { overflow: hidden; }
 }
 
 .password-requirements {
+    background: #f8f9fa;
+    border-left: 4px solid #007bff;
+    padding: 10px 15px;
+    margin: 10px 0;
+    font-size: 14px;
+}
+
+.password-requirements ul {
+    margin: 5px 0 0 20px;
+    padding: 0;
+}
+
+.password-requirements li {
+    margin-bottom: 3px;
+}
+
+.password-error {
+    color: #dc3545;
+    font-size: 14px;
+    margin-top: 5px;
+}
+.password-requirements {
     font-size: 0.75rem;
     color: var(--text-gray);
     margin-top: 0.25rem;

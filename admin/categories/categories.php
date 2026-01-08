@@ -204,32 +204,20 @@ $categories = $stmt->fetchAll();
         .edit-btn {
             background: var(--info-color);
         }
-        /* Toast Messages */
-        .toast {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 1rem 1.5rem;
-            border-radius: 10px;
-            box-shadow: var(--shadow-strong);
-            z-index: 2000;
-            backdrop-filter: blur(6px);
-            animation: slidein .25s ease-out;
-            max-width: 400px;
+        .alert {
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin: 1.5rem 0;
         }
-        .toast.success {
-            background: rgba(40, 167, 69, 0.2);
+        .alert.success {
+            background: rgba(40, 167, 69, 0.1);
             border: 1px solid var(--success-color);
             color: var(--success-color);
         }
-        .toast.error {
-            background: rgba(220, 53, 69, 0.2);
+        .alert.error {
+            background: rgba(220, 53, 69, 0.1);
             border: 1px solid var(--danger-color);
             color: var(--danger-color);
-        }
-        @keyframes slidein { 
-            from { transform: translateY(-10px); opacity: 0; } 
-            to { transform: translateY(0); opacity: 1; } 
         }
         /* Modal Styles */
         .modal {
@@ -405,23 +393,11 @@ $categories = $stmt->fetchAll();
         </div>
         
         <?php if ($success_message): ?>
-            <div class="toast success" id="successToast"><?php echo htmlspecialchars($success_message); ?></div>
-            <script>
-                setTimeout(function(){
-                    var t = document.getElementById('successToast');
-                    if (t) { t.style.transition = 'opacity .25s ease'; t.style.opacity = '0'; setTimeout(function(){ t.remove(); }, 300); }
-                }, 3000);
-            </script>
+            <div class="alert success"><?php echo htmlspecialchars($success_message); ?></div>
         <?php endif; ?>
         
         <?php if ($error_message): ?>
-            <div class="toast error" id="errorToast"><?php echo htmlspecialchars($error_message); ?></div>
-            <script>
-                setTimeout(function(){
-                    var t = document.getElementById('errorToast');
-                    if (t) { t.style.transition = 'opacity .25s ease'; t.style.opacity = '0'; setTimeout(function(){ t.remove(); }, 300); }
-                }, 3000);
-            </script>
+            <div class="alert error"><?php echo htmlspecialchars($error_message); ?></div>
         <?php endif; ?>
         
         <?php if (empty($categories)): ?>

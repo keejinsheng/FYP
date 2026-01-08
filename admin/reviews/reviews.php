@@ -10,10 +10,11 @@ $pdo = getDBConnection();
 $success_message = '';
 $error_message = '';
 
-// Handle review approval/disapproval
+// Handle review approval (one-way, no disapprove)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'toggle_approval') {
     $review_id = (int)($_POST['review_id'] ?? 0);
-    $is_approved = (int)($_POST['is_approved'] ?? 0) ? 1 : 0;
+    // Force approval only; disapprove function removed
+    $is_approved = 1;
     
     if ($review_id > 0) {
         try {
@@ -392,10 +393,6 @@ $reviews = $stmt->fetchAll();
             box-shadow: var(--shadow-soft);
         }
 
-        .toggle-approval-btn.disapprove {
-            background: var(--danger-color);
-        }
-
         @media (max-width: 768px) {
             .container {
                 padding: 0 1rem;
@@ -434,13 +431,9 @@ $reviews = $stmt->fetchAll();
 
     <div class="container">
         <?php if (!empty($_GET['updated'])): ?>
-            <div class="toast" id="statusToast">Review status updated successfully.</div>
-            <script>
-                setTimeout(function(){
-                    var t = document.getElementById('statusToast');
-                    if (t) { t.style.transition = 'opacity .25s ease'; t.style.opacity = '0'; setTimeout(function(){ t.remove(); }, 300); }
-                }, 2200);
-            </script>
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i> Review status updated successfully.
+            </div>
         <?php endif; ?>
 
         <?php if ($success_message): ?>
@@ -585,18 +578,17 @@ $reviews = $stmt->fetchAll();
                                         <i class="fas fa-check-circle"></i> Verified Purchase
                                     </span>
                                 <?php endif; ?>
-                                <form method="POST" action="" style="display: inline;" onsubmit="return confirm('Are you sure you want to <?php echo $review['is_approved'] ? 'disapprove' : 'approve'; ?> this review?');">
-                                    <input type="hidden" name="action" value="toggle_approval">
-                                    <input type="hidden" name="review_id" value="<?php echo (int)$review['review_id']; ?>">
-                                    <input type="hidden" name="is_approved" value="<?php echo $review['is_approved'] ? '0' : '1'; ?>">
-                                    <button type="submit" class="toggle-approval-btn <?php echo $review['is_approved'] ? 'disapprove' : ''; ?>">
-                                        <?php if ($review['is_approved']): ?>
-                                            <i class="fas fa-eye-slash"></i> Disapprove
-                                        <?php else: ?>
+
+                                <?php if (!$review['is_approved']): ?>
+                                    <form method="POST" action="" style="display: inline;" onsubmit="return confirm('Are you sure you want to approve this review?');">
+                                        <input type="hidden" name="action" value="toggle_approval">
+                                        <input type="hidden" name="review_id" value="<?php echo (int)$review['review_id']; ?>">
+                                        <button type="submit" class="toggle-approval-btn">
                                             <i class="fas fa-eye"></i> Approve
-                                        <?php endif; ?>
-                                    </button>
-                                </form>
+                                        </button>
+                                    </form>
+                                <?php endif; ?>
+
                                 <span class="badge <?php echo $review['is_approved'] ? 'approved' : 'pending'; ?>">
                                     <?php echo $review['is_approved'] ? 'Approved' : 'Pending'; ?>
                                 </span>

@@ -68,22 +68,16 @@ $orders = $stmt->fetchAll();
             background-color: var(--background-dark);
             color: var(--text-light);
         }
-        /* Toast */
-        .toast {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: rgba(40, 167, 69, 0.2);
-            border: 1px solid #28a745;
-            color: #28a745;
-            padding: 0.85rem 1rem;
-            border-radius: 10px;
-            box-shadow: var(--shadow-strong);
-            z-index: 2000;
-            backdrop-filter: blur(6px);
-            animation: slidein .25s ease-out;
+        .alert {
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin: 1.5rem 0;
         }
-        @keyframes slidein { from { transform: translateY(-10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .alert.success {
+            background: rgba(40, 167, 69, 0.1);
+            border: 1px solid var(--success-color);
+            color: var(--success-color);
+        }
         .admin-header {
             background: var(--card-bg);
             padding: 1rem 2rem;
@@ -439,25 +433,9 @@ $orders = $stmt->fetchAll();
             </div>
         </div>
     </div>
-    <div class="container">
+        <div class="container">
         <?php if (!empty($_GET['updated'])): ?>
-            <div class="toast" id="statusToast">Order status updated successfully.</div>
-            <script>
-                setTimeout(function(){
-                    var t = document.getElementById('statusToast');
-                    if (t) { t.style.transition = 'opacity .25s ease'; t.style.opacity = '0'; setTimeout(function(){ t.remove(); }, 300); }
-                }, 2200);
-                // Colorize status selects
-                function paintSelect(el){
-                    var val = (el.value || '').toLowerCase();
-                    el.classList.remove('pending','confirmed','preparing','delivered','cancelled');
-                    if (val) el.classList.add(val);
-                }
-                document.querySelectorAll('[data-status-select]').forEach(function(el){
-                    paintSelect(el);
-                    el.addEventListener('change', function(){ paintSelect(el); });
-                });
-            </script>
+            <div class="alert success">Order status updated successfully.</div>
         <?php endif; ?>
         <div class="page-header">
             <h1 class="page-title">Order Management</h1>
@@ -489,8 +467,6 @@ $orders = $stmt->fetchAll();
                     <?php foreach ($orders as $order): ?>
                     <tr data-order-id="<?php echo (int)$order['order_id']; ?>" 
                         data-order-number="<?php echo htmlspecialchars(strtolower($order['order_number'])); ?>" 
-                        data-customer-name="<?php echo htmlspecialchars(strtolower($order['first_name'] . ' ' . $order['last_name'])); ?>"
-                        data-order-email="<?php echo htmlspecialchars(strtolower($order['email'])); ?>">
                         data-customer-name="<?php echo htmlspecialchars(strtolower($order['first_name'] . ' ' . $order['last_name'])); ?>"
                         data-order-email="<?php echo htmlspecialchars(strtolower($order['email'])); ?>">
                             <td><?php echo (int)$order['order_id']; ?></td>
@@ -528,7 +504,6 @@ $orders = $stmt->fetchAll();
         <?php endif; ?>
     </div>
 
-    <!-- Order Details Modal -->
     <div id="orderModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -586,7 +561,6 @@ $orders = $stmt->fetchAll();
             const totalItems = items.reduce((sum, item) => sum + parseInt(item.quantity), 0);
             
             let html = `
-                <!-- Order Information -->
                 <div class="order-detail-section">
                     <h3><i class="fas fa-info-circle"></i> Order Information</h3>
                     <div class="detail-row">
@@ -611,7 +585,6 @@ $orders = $stmt->fetchAll();
                     </div>
                 </div>
 
-                <!-- Customer Information -->
                 <div class="order-detail-section">
                     <h3><i class="fas fa-user"></i> Customer Information</h3>
                     <div class="detail-row">
@@ -630,7 +603,6 @@ $orders = $stmt->fetchAll();
                     ` : ''}
                 </div>
 
-                <!-- Ordered Items -->
                 <div class="order-detail-section">
                     <h3><i class="fas fa-shopping-bag"></i> Ordered Items (${totalItems} ${totalItems === 1 ? 'item' : 'items'})</h3>
                     <div class="items-list">
@@ -660,7 +632,6 @@ $orders = $stmt->fetchAll();
                     </div>
                 </div>
 
-                <!-- Payment Information -->
                 <div class="order-detail-section">
                     <h3><i class="fas fa-credit-card"></i> Payment Information</h3>
                     <div class="detail-row">
@@ -675,7 +646,6 @@ $orders = $stmt->fetchAll();
                     ` : ''}
                 </div>
 
-                <!-- Order Summary -->
                 <div class="order-detail-section">
                     <h3><i class="fas fa-calculator"></i> Order Summary</h3>
                     <div class="detail-row">
@@ -744,7 +714,6 @@ $orders = $stmt->fetchAll();
         function filterOrders() {
             const input = document.getElementById('orderSearch');
             const filter = input.value.toLowerCase().trim();
-            const filter = input.value.toLowerCase().trim();
             const table = document.getElementById('ordersTable');
             const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
             const noResults = document.getElementById('noResults');
@@ -756,25 +725,8 @@ $orders = $stmt->fetchAll();
                 const orderNumber = row.getAttribute('data-order-number') || '';
                 const customerName = row.getAttribute('data-customer-name') || '';
                 const orderEmail = row.getAttribute('data-order-email') || '';
-                const orderIdText = `order${orderId}`;
-                const hashIdText = `#${orderId}`;
-                const orderIdWithSpace = `order ${orderId}`;
-                const orderIdLabel = `order id ${orderId}`;
-                const plainIdLabel = `id ${orderId}`;
-                const idCompact = `id${orderId}`;
                 
-                const searchText = [
-                    orderId,
-                    orderNumber,
-                    customerName,
-                    orderEmail,
-                    orderIdText,
-                    hashIdText,
-                    orderIdWithSpace,
-                    orderIdLabel,
-                    plainIdLabel,
-                    idCompact
-                ].join(' ');
+                const searchText = [orderId, orderNumber, customerName, orderEmail].join(' ');
                 
                 if (searchText.includes(filter)) {
                     row.style.display = '';
@@ -793,4 +745,4 @@ $orders = $stmt->fetchAll();
         }
     </script>
 </body>
-</html> 
+</html>

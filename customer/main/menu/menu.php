@@ -73,6 +73,10 @@ $categoryImages = [
         @keyframes spin { to { transform: rotate(360deg);} }
         .add-to-cart .ripple { position:absolute; border-radius:50%; transform: scale(0); background: rgba(255,255,255,0.35); animation: ripple 600ms linear; pointer-events:none; }
         @keyframes ripple { to { transform: scale(3); opacity:0; } }
+        .stock-info { margin-top: 0.5rem; font-size: 0.85rem; }
+        .stock-out { color: #ff6b6b; font-weight: 600; }
+        .stock-low { color: #ffb347; font-weight: 500; }
+        .stock-ok { color: #7dd87d; }
     </style>
 </head>
 <body>
@@ -109,7 +113,13 @@ $categoryImages = [
 
         <section class="menu-grid">
             <?php foreach ($products as $product): ?>
-                <div class="menu-item" data-category="<?php echo strtolower($product['category_name']); ?>" data-product-id="<?php echo $product['product_id']; ?>">
+                <div 
+                    class="menu-item" 
+                    data-category="<?php echo strtolower($product['category_name']); ?>" 
+                    data-product-id="<?php echo $product['product_id']; ?>"
+                    data-name="<?php echo strtolower(htmlspecialchars($product['product_name'], ENT_QUOTES)); ?>"
+                    data-price="<?php echo (float)$product['price']; ?>"
+                >
                     <?php 
                         $imageFile = $product['image'];
                         if (!$imageFile || !trim($imageFile)) {
@@ -124,6 +134,12 @@ $categoryImages = [
                         <?php 
                             $product_id = $product['product_id'];
                             $rating_info = $product_ratings[$product_id] ?? null;
+                            
+                            // Stock info
+                            $stock = (int)($product['stock_quantity'] ?? 0);
+                            $isAvailable = (int)($product['is_available'] ?? 0);
+                            // Out of stock if: manually taken offline OR stock <= 1
+                            $isOutOfStock = !$isAvailable || $stock <= 1;
                         ?>
                         <?php if ($rating_info && $rating_info['review_count'] > 0): ?>
                             <div class="menu-item-rating">
@@ -148,14 +164,19 @@ $categoryImages = [
                                 </span>
                             </div>
                         <?php endif; ?>
+                        
+                        <div class="stock-info">
+                            <?php if ($isOutOfStock): ?>
+                                <span class="stock-out">Out of stock</span>
+                            <?php elseif ($stock <= 5): ?>
+                                <span class="stock-low">Only <?php echo $stock; ?> left</span>
+                            <?php else: ?>
+                                <span class="stock-ok"><?php echo $stock; ?> in stock</span>
+                            <?php endif; ?>
+                        </div>
+
                         <div class="menu-footer">
                             <span class="price">RM <?php echo number_format($product['price'], 2); ?></span>
-                            <?php 
-                                $stock = (int)($product['stock_quantity'] ?? 0);
-                                $isAvailable = (int)($product['is_available'] ?? 0);
-                                // Out of stock if: manually taken offline OR stock <= 1
-                                $isOutOfStock = !$isAvailable || $stock <= 1;
-                            ?>
                             <?php if ($isOutOfStock): ?>
                                 <button class="add-to-cart" disabled style="background: #666; cursor: not-allowed;" aria-label="Out of stock">
                                     <span class="btn-text"><i class="fas fa-times-circle"></i> Out of Stock</span>
@@ -200,6 +221,15 @@ $categoryImages = [
             const searchInput = document.getElementById('searchInput');
             searchInput.addEventListener('input', filterAndDisplayItems);
 
+            // Search button (click to trigger same filtering)
+            const searchBtn = document.getElementById('searchBtn');
+            if (searchBtn) {
+                searchBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    filterAndDisplayItems();
+                });
+            }
+
             // Sort select
             const sortSelect = document.getElementById('sortSelect');
             sortSelect.addEventListener('change', filterAndDisplayItems);
@@ -210,22 +240,56 @@ $categoryImages = [
             const activeCategory = document.querySelector('.filter-btn.active').dataset.category;
             const sortValue = document.getElementById('sortSelect').value;
 
-            const menuItems = document.querySelectorAll('.menu-item');
-            
-            menuItems.forEach(item => {
-                const name = item.querySelector('h3').textContent.toLowerCase();
+            const items = Array.from(document.querySelectorAll('.menu-item'));
+
+            // Filter
+            let filtered = items.filter(item => {
+                const name = (item.dataset.name || item.querySelector('h3').textContent.toLowerCase());
                 const description = item.querySelector('p').textContent.toLowerCase();
                 const category = item.dataset.category;
-                
-                const matchesSearch = name.includes(searchTerm) || description.includes(searchTerm);
+
+                const matchesSearch = !searchTerm 
+                    ? true 
+                    : name.includes(searchTerm) || description.includes(searchTerm);
                 const matchesCategory = activeCategory === 'all' || category === activeCategory;
-                
-                if (matchesSearch && matchesCategory) {
-                    item.style.display = 'block';
-                } else {
-                    item.style.display = 'none';
+
+                return matchesSearch && matchesCategory;
+            });
+
+            // Sort
+            filtered.sort((a, b) => {
+                const nameA = (a.dataset.name || a.querySelector('h3').textContent.toLowerCase());
+                const nameB = (b.dataset.name || b.querySelector('h3').textContent.toLowerCase());
+                const priceA = parseFloat(a.dataset.price || '0');
+                const priceB = parseFloat(b.dataset.price || '0');
+
+                switch (sortValue) {
+                    case 'name-asc':
+                        return nameA.localeCompare(nameB);
+                    case 'name-desc':
+                        return nameB.localeCompare(nameA);
+                    case 'price-asc':
+                        return priceA - priceB;
+                    case 'price-desc':
+                        return priceB - priceA;
+                    default:
+                        return 0;
                 }
             });
+
+            // Update DOM order & visibility
+            const grid = document.querySelector('.menu-grid');
+            filtered.forEach(item => {
+                item.style.display = 'block';
+                grid.appendChild(item);
+            });
+
+            // Hide items that don't match filter
+            items
+                .filter(item => !filtered.includes(item))
+                .forEach(item => {
+                    item.style.display = 'none';
+                });
         }
 
         function enhancedAddToCart(productId, btnEl) {

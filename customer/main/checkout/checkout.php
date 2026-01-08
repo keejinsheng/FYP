@@ -58,8 +58,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $use_new_address = isset($_POST['use_new_address']);
     $payment_method = sanitize($_POST['payment_method'] ?? '');
     
-    // Bank information fields
+    // Bank information field (only for Online Banking)
     $bank_name = sanitize($_POST['bank_name'] ?? '');
+    
+    // Credit card information fields (only for Credit Card)
+    $card_bank_name = sanitize($_POST['card_bank_name'] ?? '');
     $cardholder_name = sanitize($_POST['cardholder_name'] ?? '');
     $card_number = sanitize($_POST['card_number'] ?? '');
     $expiry_date = sanitize($_POST['expiry_date'] ?? '');
@@ -71,61 +74,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error_message = 'Please select a delivery address';
     } elseif (empty($payment_method)) {
         $error_message = 'Please select a payment method';
-    } elseif ($payment_method !== 'Cash on Delivery' && $payment_method !== 'Online Banking' && $payment_method !== 'Credit Card') {
+    } elseif ($payment_method !== 'Online Banking' && $payment_method !== 'Credit/Debit Card') {
         $error_message = 'Invalid payment method selected';
-    } elseif ($payment_method === 'Online Banking' || $payment_method === 'Credit Card') {
-        // Validate bank information for Online Banking and Credit Card
-        // Bank name is required for Online Banking, optional for Credit Card
-        if ($payment_method === 'Online Banking' && empty($bank_name)) {
-            $error_message = 'Bank name is required for Online Banking';
-        } elseif (empty($cardholder_name) || empty($card_number) || empty($expiry_date) || empty($cvv)) {
-            $error_message = 'Please fill in all required bank information';
-        } elseif (!empty($bank_name) && !preg_match('/^[a-zA-Z\s\'-]+$/', $bank_name)) {
-            $error_message = 'Bank name must contain only letters and spaces';
-        } elseif (!preg_match('/^[a-zA-Z\s\'-]+$/', $cardholder_name)) {
-            $error_message = 'Cardholder name must contain only letters and spaces';
-        } else {
-        // Validate card number (numbers only)
-            $card_number_clean = preg_replace('/\s+/', '', $card_number);
-            if (!preg_match('/^\d+$/', $card_number_clean)) {
-                $error_message = 'Card number must contain only numbers';
-            } elseif (strlen($card_number_clean) < 13 || strlen($card_number_clean) > 19) {
-                $error_message = 'Card number must be between 13 and 19 digits';
-            } elseif (!preg_match('/^\d{2}\/\d{2}$/', $expiry_date)) {
-                $error_message = 'Expiry date must be in MM/YY format';
-            } else {
-                // Validate expiry date format
-                list($month, $year) = explode('/', $expiry_date);
-                $month_num = (int)$month;
-                $year_num = (int)$year;
-                $current_year = (int)date('y'); // Get 2-digit current year
-                $current_month = (int)date('m'); // Get current month
-                
-                if ($month_num < 1 || $month_num > 12) {
-                    $error_message = 'Expiry month must be between 01 and 12';
-                } elseif (!preg_match('/^\d{3,4}$/', $cvv)) {
-                    $error_message = 'CVV must be 3 or 4 digits';
-                } else {
-                    // Normalize CVV (keep as string for exact match)
-                    $cvv_clean = trim($cvv);
-                    
-                    // Verify bank information against dummy_bank table first
-                    // (We verify first because dummy_bank may have test dates that are in the past)
-                    $bank_verified = verifyBankDetails($bank_name, $cardholder_name, $card_number_clean, $expiry_date, $cvv_clean);
-                    
-                    if (!$bank_verified) {
-                        $error_message = 'Invalid bank information. Please check your bank details and try again.';
-                    } else {
-                        // Only validate expiry date is not in the past if bank info is verified
-                        // (This allows test data with past dates to work)
-                        if ($year_num < $current_year) {
-                    $error_message = 'Expiry date year cannot be before the current year';
-                        } elseif ($year_num == $current_year && $month_num < $current_month) {
-                    $error_message = 'Expiry date cannot be in the past';
-                }
-            }
-        }
-            }
+    } elseif ($payment_method === 'Online Banking' && empty($bank_name)) {
+        $error_message = 'Please select a bank';
+    } elseif ($payment_method === 'Credit/Debit Card') {
+        if (empty($card_bank_name)) {
+            $error_message = 'Please enter bank name';
+        } elseif (empty($cardholder_name)) {
+            $error_message = 'Please enter cardholder name';
+        } elseif (empty($card_number)) {
+            $error_message = 'Please enter card number';
+        } elseif (empty($expiry_date)) {
+            $error_message = 'Please enter expiry date';
+        } elseif (empty($cvv)) {
+            $error_message = 'Please enter CVV';
         }
     }
     
@@ -217,6 +180,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Clear cart
             $stmt = $pdo->prepare("DELETE FROM shopping_cart WHERE user_id = ?");
             $stmt->execute([$user_id]);
+            
+            // Map payment method to database enum values
+            $db_payment_method = '';
+            $payment_status = 'Pending';
+            
+            if ($payment_method === 'Online Banking') {
+                $db_payment_method = 'Online Banking';
+                $payment_status = 'Completed'; // Payment already processed
+            } elseif ($payment_method === 'Credit/Debit Card') {
+                $db_payment_method = 'Credit Card';
+                $payment_status = 'Completed'; // Payment already processed
+            }
+            
+            // Create payment record
+            $stmt = $pdo->prepare("
+                INSERT INTO payment (order_id, payment_method, payment_status, amount)
+                VALUES (?, ?, ?, ?)
+            ");
+            $stmt->execute([$order_id, $db_payment_method, $payment_status, $total]);
             
             $pdo->commit();
             
@@ -568,6 +550,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </style>
 </head>
 <body>
+    <?php include_once __DIR__ . '/../../includes/header.php'; ?>
     <div class="checkout-container">
         <div class="checkout-header">
             <h1>Checkout</h1>
@@ -649,42 +632,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="form-group">
                             <select id="payment_method" name="payment_method" required onchange="toggleBankInfo()">
                                 <option value="">Select Payment Method</option>
-                                <option value="Cash on Delivery">Cash on Delivery</option>
                                 <option value="Online Banking">Online Banking</option>
-                                <option value="Credit Card">Credit Card</option>
+                                <option value="Credit/Debit Card">Credit/Debit Card</option>
                             </select>
                         </div>
                         </div>
                         
                     <div class="form-section" id="bankInfoSection" style="display: none;">
-                        <h3>Bank Information</h3>
-                        <p style="color: var(--text-gray); margin-bottom: 1rem; font-size: 0.9rem;">Please enter your bank details to proceed with the order.</p>
+                        <h3>Bank Selection</h3>
+                        <p style="color: var(--text-gray); margin-bottom: 1rem; font-size: 0.9rem;">Please select your bank to proceed with the order.</p>
                         
                         <div class="form-group" id="bankNameGroup">
-                            <label for="bank_name">Bank Name <span id="bankNameRequired" style="color: var(--primary-color);">*</span></label>
-                            <input type="text" id="bank_name" name="bank_name" placeholder="e.g., Maybank, CIMB, Public Bank" maxlength="100">
+                            <label for="bank_name">Select Bank <span id="bankNameRequired" style="color: var(--primary-color);">*</span></label>
+                            <select id="bank_name" name="bank_name" style="display: none;">
+                                <option value="">-- Select Bank --</option>
+                                <option value="Maybank">Maybank</option>
+                                <option value="CIMB">CIMB Bank</option>
+                                <option value="Public Bank">Public Bank</option>
+                                <option value="Hong Leong Bank">Hong Leong Bank</option>
+                                <option value="RHB Bank">RHB Bank</option>
+                                <option value="AmBank">AmBank</option>
+                                <option value="Bank Islam">Bank Islam</option>
+                                <option value="Alliance Bank">Alliance Bank</option>
+                                <option value="OCBC Bank">OCBC Bank</option>
+                                <option value="Standard Chartered">Standard Chartered</option>
+                                <option value="UOB">United Overseas Bank (UOB)</option>
+                            </select>
                             <small id="bankNameNote" style="color: var(--text-gray); font-size: 0.85rem; display: none;">Required for Online Banking</small>
                         </div>
-                            
+                    </div>
+
+                    <div class="form-section" id="creditCardSection" style="display: none;">
+                        <h3>Credit/Debit Card Details</h3>
+                        
+                        <div class="form-group">
+                            <label for="card_bank_name">Bank Name <span style="color: var(--primary-color);">*</span></label>
+                            <input type="text" id="card_bank_name" name="card_bank_name" placeholder="e.g., Maybank">
+                            <small style="color: var(--text-gray); font-size: 0.85rem; display: block; margin-top: 0.25rem;">Required for Credit/Debit Card</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="cardholder_name">Cardholder Name <span style="color: var(--primary-color);">*</span></label>
+                            <input type="text" id="cardholder_name" name="cardholder_name" placeholder="Name as it appears on card">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="card_number">Card Number <span style="color: var(--primary-color);">*</span></label>
+                            <input type="text" id="card_number" name="card_number" placeholder="1234 5678 9012 3456" maxlength="19">
+                        </div>
+                        
+                        <div class="form-row">
                             <div class="form-group">
-                                <label for="cardholder_name">Cardholder Name *</label>
-                            <input type="text" id="cardholder_name" name="cardholder_name" placeholder="Name on card" maxlength="100">
+                                <label for="expiry_date">Expiry Date <span style="color: var(--primary-color);">*</span></label>
+                                <input type="text" id="expiry_date" name="expiry_date" placeholder="MM/YY" maxlength="5">
                             </div>
-                            
                             <div class="form-group">
-                                <label for="card_number">Card Number *</label>
-                            <input type="text" id="card_number" name="card_number" placeholder="1234 5678 9012 3456" maxlength="19" style="font-family: 'Courier New', monospace; letter-spacing: 1px;">
+                                <label for="cvv">CVV <span style="color: var(--primary-color);">*</span></label>
+                                <input type="text" id="cvv" name="cvv" placeholder="123" maxlength="4">
                             </div>
-                            
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="expiry_date">Expiry Date *</label>
-                                <input type="text" id="expiry_date" name="expiry_date" placeholder="MM/YY" maxlength="5" style="font-family: 'Courier New', monospace; letter-spacing: 1px;">
-                                </div>
-                                <div class="form-group">
-                                    <label for="cvv">CVV *</label>
-                                <input type="text" id="cvv" name="cvv" placeholder="123" maxlength="4" style="font-family: 'Courier New', monospace; letter-spacing: 1px;">
-                                </div>
                         </div>
                     </div>
 
@@ -949,205 +954,127 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         `;
         document.head.appendChild(style);
         
-        // Toggle bank information section based on payment method
+        // Toggle bank information section and credit card section based on payment method
         function toggleBankInfo() {
             const paymentMethod = document.getElementById('payment_method').value;
             const bankInfoSection = document.getElementById('bankInfoSection');
-            const bankNameInput = document.getElementById('bank_name');
-            const cardholderNameInput = document.getElementById('cardholder_name');
-            const cardNumberInput = document.getElementById('card_number');
-            const expiryDateInput = document.getElementById('expiry_date');
-            const cvvInput = document.getElementById('cvv');
+            const creditCardSection = document.getElementById('creditCardSection');
+            const bankNameSelect = document.getElementById('bank_name');
             
-            if (paymentMethod === 'Online Banking' || paymentMethod === 'Credit Card') {
+            // Handle Online Banking
+            if (paymentMethod === 'Online Banking') {
                 bankInfoSection.style.display = 'block';
+                bankNameSelect.style.display = 'block';
+                bankNameSelect.setAttribute('required', 'required');
+                document.getElementById('bankNameRequired').style.display = 'inline';
+                document.getElementById('bankNameNote').style.display = 'block';
                 
-                // Bank name is required only for Online Banking
-                if (paymentMethod === 'Online Banking') {
-                    bankNameInput.setAttribute('required', 'required');
-                    document.getElementById('bankNameRequired').style.display = 'inline';
-                    document.getElementById('bankNameNote').style.display = 'block';
-                } else {
-                    bankNameInput.removeAttribute('required');
-                    document.getElementById('bankNameRequired').style.display = 'none';
-                    document.getElementById('bankNameNote').style.display = 'none';
-                }
+                // Hide credit card section
+                creditCardSection.style.display = 'none';
+                clearCreditCardFields();
+            } 
+            // Handle Credit/Debit Card
+            else if (paymentMethod === 'Credit/Debit Card') {
+                creditCardSection.style.display = 'block';
+                document.getElementById('card_bank_name').setAttribute('required', 'required');
+                document.getElementById('cardholder_name').setAttribute('required', 'required');
+                document.getElementById('card_number').setAttribute('required', 'required');
+                document.getElementById('expiry_date').setAttribute('required', 'required');
+                document.getElementById('cvv').setAttribute('required', 'required');
                 
-                // Set required attributes for other fields
-                cardholderNameInput.setAttribute('required', 'required');
-                cardNumberInput.setAttribute('required', 'required');
-                expiryDateInput.setAttribute('required', 'required');
-                cvvInput.setAttribute('required', 'required');
-            } else {
+                // Hide bank info section
                 bankInfoSection.style.display = 'none';
-                // Remove required attributes
-                bankNameInput.removeAttribute('required');
-                cardholderNameInput.removeAttribute('required');
-                cardNumberInput.removeAttribute('required');
-                expiryDateInput.removeAttribute('required');
-                cvvInput.removeAttribute('required');
-                // Clear values
-                bankNameInput.value = '';
-                cardholderNameInput.value = '';
-                cardNumberInput.value = '';
-                expiryDateInput.value = '';
-                cvvInput.value = '';
+                bankNameSelect.removeAttribute('required');
+                bankNameSelect.value = '';
+                document.getElementById('bankNameRequired').style.display = 'none';
+                document.getElementById('bankNameNote').style.display = 'none';
+            } 
+            // Handle empty selection
+            else {
+                bankInfoSection.style.display = 'none';
+                creditCardSection.style.display = 'none';
+                bankNameSelect.removeAttribute('required');
+                bankNameSelect.value = '';
+                document.getElementById('bankNameRequired').style.display = 'none';
+                document.getElementById('bankNameNote').style.display = 'none';
+                clearCreditCardFields();
             }
         }
         
-        // Format and validate bank name (letters and spaces only)
-        function formatBankName(input) {
-            const originalValue = input.value;
-            const value = originalValue.replace(/[^a-zA-Z\s'-]/g, '');
-            if (originalValue !== value) {
-                input.value = value;
-            }
+        // Clear credit card fields
+        function clearCreditCardFields() {
+            document.getElementById('card_bank_name').value = '';
+            document.getElementById('cardholder_name').value = '';
+            document.getElementById('card_number').value = '';
+            document.getElementById('expiry_date').value = '';
+            document.getElementById('cvv').value = '';
+            document.getElementById('card_bank_name').removeAttribute('required');
+            document.getElementById('cardholder_name').removeAttribute('required');
+            document.getElementById('card_number').removeAttribute('required');
+            document.getElementById('expiry_date').removeAttribute('required');
+            document.getElementById('cvv').removeAttribute('required');
         }
         
-        // Format and validate cardholder name (letters and spaces only)
-        function formatCardholderName(input) {
-            const originalValue = input.value;
-            const value = originalValue.replace(/[^a-zA-Z\s'-]/g, '');
-            if (originalValue !== value) {
-                input.value = value;
-            }
-            }
-            
-        // Format card number (numbers only, add spaces)
-        function formatCardNumber(input) {
-            const originalValue = input.value;
-            let value = originalValue.replace(/\D/g, '');
-            
-            // Format with spaces every 4 digits
-            let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
-            if (formattedValue.length > 19) {
-                formattedValue = formattedValue.substring(0, 19);
-            }
-            input.value = formattedValue;
-        }
+        // Format card number with spaces (1234 5678 9012 3456) and only allow numbers
+        document.getElementById('card_number').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, ''); // Remove all non-digits
+            let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value; // Add space every 4 digits
+            e.target.value = formattedValue;
+        });
         
         // Format expiry date (MM/YY)
-        function formatExpiryDate(input) {
-            const originalValue = input.value;
-            let value = originalValue.replace(/\D/g, '');
-            
+        document.getElementById('expiry_date').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
             if (value.length >= 2) {
                 value = value.substring(0, 2) + '/' + value.substring(2, 4);
             }
-            if (value.length > 5) {
-                value = value.substring(0, 5);
-            }
-            input.value = value;
-        }
+            e.target.value = value;
+        });
         
-        // Format CVV (numbers only, max 4 digits)
-        function formatCVV(input) {
-            const originalValue = input.value;
-            let value = originalValue.replace(/\D/g, '');
-            if (value.length > 4) {
-                value = value.substring(0, 4);
-            }
-            input.value = value;
-        }
+        // Only allow numbers for CVV
+        document.getElementById('cvv').addEventListener('input', function(e) {
+            e.target.value = e.target.value.replace(/\D/g, '');
+        });
         
-        // Validate bank information before submit (only for Online Banking and Credit Card)
+        // Validate bank information before submit (only for Online Banking)
         function validateBankInfo() {
             const paymentMethod = document.getElementById('payment_method').value;
             
-            // Skip validation if Cash on Delivery
-            if (paymentMethod === 'Cash on Delivery') {
-                return { valid: true };
+            // Validate bank selection for Online Banking
+            if (paymentMethod === 'Online Banking') {
+                const bankName = document.getElementById('bank_name').value.trim();
+                if (!bankName) {
+                    return { valid: false, message: 'Please select a bank' };
+                }
             }
             
-            // Validate bank info for Online Banking and Credit Card
-            if (paymentMethod !== 'Online Banking' && paymentMethod !== 'Credit Card') {
-                return { valid: false, message: 'Please select a payment method' };
-            }
-            
-            const bankName = document.getElementById('bank_name').value.trim();
-            const cardholderName = document.getElementById('cardholder_name').value.trim();
-            const cardNumber = document.getElementById('card_number').value.replace(/\s+/g, '');
-            const expiryDate = document.getElementById('expiry_date').value.trim();
-            const cvv = document.getElementById('cvv').value.trim();
-            
-            // Bank name is required only for Online Banking
-            if (paymentMethod === 'Online Banking' && !bankName) {
-                return { valid: false, message: 'Bank name is required for Online Banking' };
-            }
-            
-            if (!cardholderName || !cardNumber || !expiryDate || !cvv) {
-                return { valid: false, message: 'Please fill in all required bank information' };
-            }
-
-            if (bankName && !/^[a-zA-Z\s'-]+$/.test(bankName)) {
-                return { valid: false, message: 'Bank name must contain only letters and spaces' };
-            }
-            
-            if (!/^[a-zA-Z\s'-]+$/.test(cardholderName)) {
-                return { valid: false, message: 'Cardholder name must contain only letters and spaces' };
-            }
-            
-            if (!/^\d+$/.test(cardNumber)) {
-                return { valid: false, message: 'Card number must contain only numbers' };
-            }
-            
-            if (cardNumber.length < 13 || cardNumber.length > 19) {
-                return { valid: false, message: 'Card number must be between 13 and 19 digits' };
-            }
-            
-            if (!/^\d{2}\/\d{2}$/.test(expiryDate)) {
-                return { valid: false, message: 'Expiry date must be in MM/YY format' };
-            }
-            
-            const [month, year] = expiryDate.split('/');
-            const monthNum = parseInt(month, 10);
-            const yearNum = parseInt(year, 10);
-            const currentYear = parseInt(new Date().getFullYear().toString().slice(-2), 10);
-            const currentMonth = new Date().getMonth() + 1;
-            
-            if (monthNum < 1 || monthNum > 12) {
-                return { valid: false, message: 'Expiry month must be between 01 and 12' };
-            }
-            
-            if (yearNum < currentYear) {
-                return { valid: false, message: 'Expiry date year cannot be before the current year' };
-            }
-            
-            if (yearNum === currentYear && monthNum < currentMonth) {
-                return { valid: false, message: 'Expiry date cannot be in the past' };
-            }
-            
-            if (!/^\d{3,4}$/.test(cvv)) {
-                return { valid: false, message: 'CVV must be 3 or 4 digits' };
+            // Validate credit card fields for Credit/Debit Card
+            if (paymentMethod === 'Credit/Debit Card') {
+                const cardBankName = document.getElementById('card_bank_name').value.trim();
+                const cardholderName = document.getElementById('cardholder_name').value.trim();
+                const cardNumber = document.getElementById('card_number').value.replace(/\s/g, ''); // Remove spaces
+                const expiryDate = document.getElementById('expiry_date').value.trim();
+                const cvv = document.getElementById('cvv').value.trim();
+                
+                if (!cardBankName) {
+                    return { valid: false, message: 'Please enter bank name' };
+                }
+                if (!cardholderName) {
+                    return { valid: false, message: 'Please enter cardholder name' };
+                }
+                if (!cardNumber || cardNumber.length < 13 || cardNumber.length > 19) {
+                    return { valid: false, message: 'Please enter a valid card number' };
+                }
+                if (!expiryDate || !/^\d{2}\/\d{2}$/.test(expiryDate)) {
+                    return { valid: false, message: 'Please enter a valid expiry date (MM/YY)' };
+                }
+                if (!cvv || cvv.length < 3 || cvv.length > 4) {
+                    return { valid: false, message: 'Please enter a valid CVV' };
+                }
             }
             
             return { valid: true };
         }
-        
-        // Add event listeners for formatting
-        document.addEventListener('DOMContentLoaded', function() {
-            const bankNameInput = document.getElementById('bank_name');
-            const cardholderNameInput = document.getElementById('cardholder_name');
-            const cardNumberInput = document.getElementById('card_number');
-            const expiryDateInput = document.getElementById('expiry_date');
-            const cvvInput = document.getElementById('cvv');
-            
-            if (bankNameInput) {
-                bankNameInput.addEventListener('input', function() { formatBankName(this); });
-            }
-            if (cardholderNameInput) {
-                cardholderNameInput.addEventListener('input', function() { formatCardholderName(this); });
-            }
-            if (cardNumberInput) {
-                cardNumberInput.addEventListener('input', function() { formatCardNumber(this); });
-            }
-            if (expiryDateInput) {
-                expiryDateInput.addEventListener('input', function() { formatExpiryDate(this); });
-            }
-            if (cvvInput) {
-                cvvInput.addEventListener('input', function() { formatCVV(this); });
-        }
-        });
         
         // Form validation before submit
         document.querySelector('form').addEventListener('submit', function(e) {
@@ -1182,11 +1109,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
             
-            // Validate bank information (only for Online Banking and Credit Card)
-            if (isValid && (paymentMethod === 'Online Banking' || paymentMethod === 'Credit Card')) {
-                const bankValidation = validateBankInfo();
-                if (!bankValidation.valid) {
-                    errorMessage = bankValidation.message;
+            // Validate bank information (for Online Banking) or credit card information (for Credit/Debit Card)
+            if (isValid && (paymentMethod === 'Online Banking' || paymentMethod === 'Credit/Debit Card')) {
+                const validation = validateBankInfo();
+                if (!validation.valid) {
+                    errorMessage = validation.message;
                     isValid = false;
                 }
             }

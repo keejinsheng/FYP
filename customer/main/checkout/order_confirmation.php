@@ -21,13 +21,9 @@ $order = $_SESSION['last_order'];
 $pdo = getDBConnection();
 $user_id = getCurrentUserId();
 
-// Update payment status to completed
-try {
-    $stmt = $pdo->prepare("UPDATE payment SET payment_status = 'Completed' WHERE order_id = ?");
-    $stmt->execute([$order['order_id']]);
-} catch (Exception $e) {
-    // Log error but continue
-}
+// Payment status is already set correctly in checkout.php
+// Online Banking and Credit Card are set to 'Completed'
+// Cash on Delivery remains 'Pending' until delivery
 
 // Fetch existing reviews for products in this order
 $existing_reviews = [];
