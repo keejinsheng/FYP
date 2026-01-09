@@ -17,11 +17,11 @@ try {
 
 $user_id = $_SESSION['user_id'];
 
-// Fetch cart items
+// Fetch cart items with stock information
 try {
     $stmt = $pdo->prepare("
         SELECT sc.cart_id, sc.quantity, sc.special_instructions,
-               p.product_id, p.product_name, p.price, p.image, p.description
+               p.product_id, p.product_name, p.price, p.image, p.description, p.stock_quantity, p.is_available
         FROM shopping_cart sc
         JOIN product p ON sc.product_id = p.product_id
         WHERE sc.user_id = ?
@@ -29,6 +29,31 @@ try {
     ");
     $stmt->execute([$user_id]);
     $cart_items = $stmt->fetchAll();
+    
+    // Check stock for each item and add stock status
+    foreach ($cart_items as &$item) {
+        $stock = (int)($item['stock_quantity'] ?? 0);
+        $is_available = (int)($item['is_available'] ?? 0);
+        $requested_qty = (int)$item['quantity'];
+        
+        $item['stock_status'] = 'ok';
+        $item['stock_message'] = '';
+        
+        if (!$is_available) {
+            $item['stock_status'] = 'unavailable';
+            $item['stock_message'] = 'Currently unavailable';
+        } elseif ($stock <= 1) {
+            $item['stock_status'] = 'out_of_stock';
+            $item['stock_message'] = 'Out of stock';
+        } elseif ($requested_qty > $stock) {
+            $item['stock_status'] = 'insufficient';
+            $item['stock_message'] = 'Only ' . $stock . ' available (you have ' . $requested_qty . ' in cart)';
+        } elseif ($stock <= 5) {
+            $item['stock_status'] = 'low';
+            $item['stock_message'] = 'Only ' . $stock . ' left';
+        }
+    }
+    unset($item); // Break reference
 } catch (Exception $e) {
     $cart_items = [];
     $error_message = "Error loading cart: " . $e->getMessage();
@@ -263,6 +288,44 @@ $total = $subtotal + $tax_amount + $delivery_fee;
             box-shadow: var(--shadow-soft);
         }
 
+        .stock-status {
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+            padding: 0.4rem 0.6rem;
+            border-radius: 6px;
+            display: inline-block;
+        }
+
+        .stock-status.unavailable {
+            background: rgba(220, 53, 69, 0.2);
+            color: #dc3545;
+            border: 1px solid #dc3545;
+        }
+
+        .stock-status.out_of_stock {
+            background: rgba(220, 53, 69, 0.2);
+            color: #dc3545;
+            border: 1px solid #dc3545;
+        }
+
+        .stock-status.insufficient {
+            background: rgba(255, 193, 7, 0.2);
+            color: #ffc107;
+            border: 1px solid #ffc107;
+        }
+
+        .stock-status.low {
+            background: rgba(255, 193, 7, 0.2);
+            color: #ffc107;
+            border: 1px solid #ffc107;
+        }
+
+        .stock-status.ok {
+            background: rgba(40, 167, 69, 0.2);
+            color: #28a745;
+            border: 1px solid #28a745;
+        }
+
         @media (max-width: 768px) {
             .cart-grid {
                 grid-template-columns: 1fr;
@@ -306,6 +369,11 @@ $total = $subtotal + $tax_amount + $delivery_fee;
                             <div class="item-details">
                                 <h3><?php echo htmlspecialchars($item['product_name']); ?></h3>
                                 <p><?php echo htmlspecialchars($item['description']); ?></p>
+                                <?php if (isset($item['stock_status']) && $item['stock_status'] !== 'ok'): ?>
+                                    <div class="stock-status <?php echo htmlspecialchars($item['stock_status']); ?>">
+                                        <i class="fas fa-exclamation-triangle"></i> <?php echo htmlspecialchars($item['stock_message']); ?>
+                                    </div>
+                                <?php endif; ?>
                                 <div class="quantity-controls">
                                     <button class="quantity-btn" onclick="updateQuantity(<?php echo $item['cart_id']; ?>, <?php echo $item['quantity'] - 1; ?>)">-</button>
                                     <span class="quantity"><?php echo $item['quantity']; ?></span>
@@ -346,7 +414,26 @@ $total = $subtotal + $tax_amount + $delivery_fee;
                         <span>Total</span>
                         <span>RM <?php echo number_format($total, 2); ?></span>
                     </div>
-                    <button class="checkout-btn" onclick="window.location.href='../checkout/checkout.php'">Proceed to Checkout</button>
+                    <?php 
+                        // Check if there are any stock issues
+                        $has_stock_issues = false;
+                        foreach ($cart_items as $item) {
+                            if (isset($item['stock_status']) && in_array($item['stock_status'], ['unavailable', 'out_of_stock', 'insufficient'])) {
+                                $has_stock_issues = true;
+                                break;
+                            }
+                        }
+                    ?>
+                    <?php if ($has_stock_issues): ?>
+                        <button class="checkout-btn" disabled style="opacity: 0.6; cursor: not-allowed;" title="Please fix stock issues before checkout">
+                            Cannot Checkout - Stock Issues
+                        </button>
+                        <p style="color: #ffc107; font-size: 0.85rem; margin-top: 0.5rem; text-align: center;">
+                            <i class="fas fa-exclamation-triangle"></i> Please update quantities or remove items with stock issues
+                        </p>
+                    <?php else: ?>
+                        <button class="checkout-btn" onclick="window.location.href='../checkout/checkout.php'">Proceed to Checkout</button>
+                    <?php endif; ?>
                 </div>
             </div>
         <?php endif; ?>

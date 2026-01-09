@@ -41,7 +41,7 @@ if ($payment_method === 'Online Banking' && empty($bank_name)) {
 }
 
 // Verify bank information against dummy_bank table (bank_name optional for Credit Card)
-$is_verified = verifyBankInfo($bank_name, $cardholder_name, $card_number_clean, $expiry_date, $cvv);
+$is_verified = verifyBankDetails($bank_name, $cardholder_name, $card_number_clean, $expiry_date, $cvv);
 
 if ($is_verified) {
     echo json_encode([
