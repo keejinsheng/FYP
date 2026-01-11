@@ -19,7 +19,15 @@
             $pdo->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, true);
             return $pdo;
         } catch(PDOException $e) {
-            die("Connection failed. Please verify DB settings.\n");
+            // Show more detailed error in development, simple message in production
+            $error_msg = "Connection failed. Please verify DB settings.\n";
+            if (getenv('APP_ENV') === 'development' || !empty($_GET['debug'])) {
+                $error_msg .= "\nError details: " . $e->getMessage() . "\n";
+                $error_msg .= "Host: " . DB_HOST . ":" . DB_PORT . "\n";
+                $error_msg .= "Database: " . DB_NAME . "\n";
+                $error_msg .= "User: " . DB_USER . "\n";
+            }
+            die($error_msg);
         }
     }
 

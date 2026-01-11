@@ -12,17 +12,56 @@ $user_id = getCurrentUserId();
 $error_message = '';
 $success_message = '';
 
-// Fetch cart items
+// Fetch cart items with stock information
 $stmt = $pdo->prepare("
     SELECT sc.cart_id, sc.quantity, sc.special_instructions,
-           p.product_id, p.product_name, p.price, p.image, p.description
+           p.product_id, p.product_name, p.price, p.image, p.description, p.stock_quantity, p.is_available
     FROM shopping_cart sc
     JOIN product p ON sc.product_id = p.product_id
-    WHERE sc.user_id = ? AND p.is_available = 1
+    WHERE sc.user_id = ?
     ORDER BY sc.created_at DESC
 ");
 $stmt->execute([$user_id]);
 $cart_items = $stmt->fetchAll();
+
+// Redirect if cart is empty
+if (empty($cart_items)) {
+    redirect('../cart/cart.php');
+}
+
+// Check stock availability for each cart item
+$stock_issues = [];
+$valid_cart_items = [];
+foreach ($cart_items as $item) {
+    $stock = (int)($item['stock_quantity'] ?? 0);
+    $is_available = (int)($item['is_available'] ?? 0);
+    $requested_qty = (int)$item['quantity'];
+    
+    // Check if product is available
+    if (!$is_available) {
+        $stock_issues[] = $item['product_name'] . ' is currently unavailable';
+    }
+    // Check if out of stock (stock <= 1)
+    elseif ($stock <= 1) {
+        $stock_issues[] = $item['product_name'] . ' is out of stock';
+    }
+    // Check if requested quantity exceeds available stock
+    elseif ($requested_qty > $stock) {
+        $stock_issues[] = $item['product_name'] . ': Only ' . $stock . ' item(s) available, but you have ' . $requested_qty . ' in cart';
+    } else {
+        // Item is valid, add to valid items
+        $valid_cart_items[] = $item;
+    }
+}
+
+// If there are stock issues, show error
+if (!empty($stock_issues)) {
+    $error_message = 'Stock issues detected: ' . implode('. ', $stock_issues) . '. Please update your cart.';
+    // Still allow checkout but show warning - the final validation happens during order creation
+}
+
+// Use valid cart items for calculations (or all items if no issues)
+$cart_items = !empty($valid_cart_items) ? $valid_cart_items : $cart_items;
 
 // Redirect if cart is empty
 if (empty($cart_items)) {
@@ -1077,7 +1116,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         // Form validation before submit
-        document.querySelector('form').addEventListener('submit', function(e) {
+        document.querySelector('form').addEventListener('submit', async function(e) {
+            e.preventDefault(); // Always prevent default first
+            
             const selectedAddress = document.querySelector('input[name="selected_address_id"]:checked');
             const newAddressForm = document.getElementById('newAddressForm');
             const isNewAddressVisible = newAddressForm.classList.contains('show');
@@ -1119,9 +1160,63 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             
             if (!isValid) {
-                e.preventDefault();
                 alert(errorMessage);
                 return false;
+            }
+            
+            // If Credit/Debit Card, verify bank information before submitting
+            if (paymentMethod === 'Credit/Debit Card') {
+                const submitBtn = document.querySelector('.place-order-btn');
+                const originalText = submitBtn.textContent;
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Verifying...';
+                
+                try {
+                    const cardBankName = document.getElementById('card_bank_name').value.trim();
+                    const cardholderName = document.getElementById('cardholder_name').value.trim();
+                    const cardNumber = document.getElementById('card_number').value;
+                    const expiryDate = document.getElementById('expiry_date').value.trim();
+                    const cvv = document.getElementById('cvv').value.trim();
+                    
+                    const formData = new FormData();
+                    formData.append('payment_method', 'Credit Card');
+                    formData.append('bank_name', cardBankName);
+                    formData.append('cardholder_name', cardholderName);
+                    formData.append('card_number', cardNumber);
+                    formData.append('expiry_date', expiryDate);
+                    formData.append('cvv', cvv);
+                    
+                    const response = await fetch('../../api/verify_bank_info.php', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success && data.verified) {
+                        // Verification successful, submit the form
+                        submitBtn.textContent = 'Placing Order...';
+                        document.querySelector('form').submit();
+                    } else {
+                        // Verification failed
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = originalText;
+                        alert(data.message || 'Invalid bank information. Please check your card details and try again.');
+                        return false;
+                    }
+                } catch (error) {
+                    console.error('Verification error:', error);
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalText;
+                    alert('Error verifying bank information. Please try again.');
+                    return false;
+                }
+            } else {
+                // For Online Banking or other methods, submit directly
+                const submitBtn = document.querySelector('.place-order-btn');
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Placing Order...';
+                document.querySelector('form').submit();
             }
         });
     </script>

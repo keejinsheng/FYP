@@ -145,6 +145,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         try {
+            // First, get the product_id from cart item
+            $stmt = $pdo->prepare("SELECT product_id FROM shopping_cart WHERE cart_id = ? AND user_id = ?");
+            $stmt->execute([$cart_id, $user_id]);
+            $cart_item = $stmt->fetch();
+            
+            if (!$cart_item) {
+                echo json_encode(['success' => false, 'message' => 'Cart item not found']);
+                exit();
+            }
+            
+            // Check product stock
+            $stmt = $pdo->prepare("SELECT stock_quantity, is_available, product_name FROM product WHERE product_id = ?");
+            $stmt->execute([$cart_item['product_id']]);
+            $product = $stmt->fetch();
+            
+            if (!$product) {
+                echo json_encode(['success' => false, 'message' => 'Product not found']);
+                exit();
+            }
+            
+            // Check if product is available
+            if (!$product['is_available']) {
+                echo json_encode(['success' => false, 'message' => 'This product is currently unavailable']);
+                exit();
+            }
+            
+            // Check stock quantity (stock <= 1 is considered out of stock)
+            $stock = (int)$product['stock_quantity'];
+            if ($stock <= 1) {
+                echo json_encode(['success' => false, 'message' => 'This product is out of stock']);
+                exit();
+            }
+            
+            // Check if requested quantity exceeds stock
+            if ($quantity > $stock) {
+                echo json_encode(['success' => false, 'message' => 'Insufficient stock. Only ' . $stock . ' item(s) available.']);
+                exit();
+            }
+            
+            // Update quantity
             $stmt = $pdo->prepare("UPDATE shopping_cart SET quantity = ? WHERE cart_id = ? AND user_id = ?");
             $stmt->execute([$quantity, $cart_id, $user_id]);
             
