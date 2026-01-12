@@ -168,7 +168,7 @@ require_once '../../../config/database.php';
                 <i class="fas fa-envelope"></i>
                 <div>
                     <h3>Email</h3>
-                    <p>hello@spicefusion.com</p>
+                    <p>spicefusion0711@gmail.com</p>
                 </div>
             </div>
             <div class="contact-item">

@@ -167,20 +167,20 @@ require_once '../../../config/database.php';
             <div class="team-grid">
                 <div class="team-member">
                     <img src="../../../images/Shaun.jpg" alt="Shaun">
-                    <h3>Chua Shen Lin Shaun</h3>
-                    <p>Head Chef</p>
+                    <h3>CHUA SHEN LIN SHAUN</h3>
+                    <p>Manager</p>
                     <p>Specializing in Indonesian cuisine with over 10 years of experience in traditional cooking methods.</p>
                 </div>
                 <div class="team-member">
                     <img src="../../../images/KEE.jpg" alt="KEE">
-                    <h3>Kee Jin Sheng</h3>
-                    <p>Chef</p>
+                    <h3>KEE JIN SHENG</h3>
+                    <p>CEO</p>
                     <p>Expert in Chinese cuisine, bringing authentic flavors and techniques from various regions of China.</p>
                 </div>
                 <div class="team-member">
                     <img src="../../../images/LIM.jpg" alt="LIM">
-                    <h3>Lim Xing Yi</h3>
-                    <p>Chef</p>
+                    <h3>LIM XING YI</h3>
+                    <p>Manager</p>
                     <p>Master of fusion cuisine, creating innovative dishes that blend the best of both culinary traditions.</p>
                 </div>
             </div>
