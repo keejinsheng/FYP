@@ -14,7 +14,7 @@ require_once '../../../config/database.php';
     <link rel="stylesheet" href="../../includes/styles.css">
     <style>
         .contact-hero {
-            background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('/DWP/images/landing_page.png');
+            background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('/FYP/images/landing_page.png');
             background-size: cover;
             background-position: center;
             padding: 6rem 0;
@@ -107,7 +107,7 @@ require_once '../../../config/database.php';
             border: 2px solid var(--border-color);
             border-radius: var(--border-radius);
             background-color: #fff;
-            color: var(--text-light);
+            color: #000;
             font-family: inherit;
         }
 
@@ -129,6 +129,11 @@ require_once '../../../config/database.php';
 
         .submit-btn:hover {
             background: var(--primary-dark);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
 
         @media (max-width: 768px) {
@@ -182,6 +187,7 @@ require_once '../../../config/database.php';
 
         <div class="contact-form">
             <h2>Send us a Message</h2>
+            <div id="formMessage" style="display: none; padding: 1rem; margin-bottom: 1rem; border-radius: 6px; text-align: center;"></div>
             <form id="contactForm">
                 <div class="form-group">
                     <label for="name">Name</label>
@@ -199,7 +205,7 @@ require_once '../../../config/database.php';
                     <label for="message">Message</label>
                     <textarea id="message" name="message" required></textarea>
                 </div>
-                <button type="submit" class="submit-btn">Send Message</button>
+                <button type="submit" class="submit-btn" id="submitBtn">Send Message</button>
             </form>
         </div>
     </div>
@@ -223,10 +229,52 @@ require_once '../../../config/database.php';
                 document.getElementById('footer').innerHTML = footerHtml;
 
                 // Contact form handling
-                document.getElementById('contactForm').addEventListener('submit', function(e) {
+                const contactForm = document.getElementById('contactForm');
+                const formMessage = document.getElementById('formMessage');
+                const submitBtn = document.getElementById('submitBtn');
+
+                contactForm.addEventListener('submit', async function(e) {
                     e.preventDefault();
-                    alert('Thank you for your message! We will get back to you soon.');
-                    this.reset();
+                    
+                    // Disable submit button
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Sending...';
+                    formMessage.style.display = 'none';
+
+                    const formData = new FormData(this);
+
+                    try {
+                        const response = await fetch('contact_handler.php', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        const result = await response.json();
+
+                        // Show message
+                        formMessage.style.display = 'block';
+                        formMessage.textContent = result.message;
+                        
+                        if (result.success) {
+                            formMessage.style.backgroundColor = 'rgba(40, 167, 69, 0.1)';
+                            formMessage.style.border = '1px solid #28a745';
+                            formMessage.style.color = '#28a745';
+                            this.reset();
+                        } else {
+                            formMessage.style.backgroundColor = 'rgba(255, 75, 43, 0.1)';
+                            formMessage.style.border = '1px solid #FF4B2B';
+                            formMessage.style.color = '#FF4B2B';
+                        }
+                    } catch (error) {
+                        formMessage.style.display = 'block';
+                        formMessage.style.backgroundColor = 'rgba(255, 75, 43, 0.1)';
+                        formMessage.style.border = '1px solid #FF4B2B';
+                        formMessage.style.color = '#FF4B2B';
+                        formMessage.textContent = 'An error occurred. Please try again later.';
+                    } finally {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Send Message';
+                    }
                 });
             } catch (error) {
                 console.error('Error loading header or footer:', error);
