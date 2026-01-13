@@ -46,9 +46,12 @@
         return isset($_SESSION['admin_id']);
     }
 
-    // Normalize role text (e.g., "Super Admin" -> "superadmin")
+    // Normalize role text (e.g., "Super Admin" / "super_admin" -> "superadmin")
     function normalizeRole($role) {
-        return strtolower(preg_replace('/[^a-z]/', '', (string)$role));
+        // 先统一转成小写，再去掉非字母字符，避免原来只保留小写字母导致
+        // "Super Admin" 变成 "uperdmin"、无法匹配 superadmin 的问题
+        $lower = strtolower((string)$role);
+        return preg_replace('/[^a-z]/', '', $lower);
     }
 
     // Helper function to check if admin is superadmin
