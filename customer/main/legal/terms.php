@@ -6,7 +6,7 @@ require_once '../../../config/database.php';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terms of Service - Spice Fusion</title>
+    <title>Terms and Conditions - Spice Fusion</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -62,7 +62,7 @@ require_once '../../../config/database.php';
     <div id="header"></div>
 
     <div class="legal-content">
-        <h1>Terms of Service</h1>
+        <h1>Terms and Conditions</h1>
         
         <div class="last-updated">
             <p><strong>Last Updated:</strong> December 2024</p>
@@ -94,13 +94,13 @@ require_once '../../../config/database.php';
         <p>Spice Fusion has not reviewed all of the sites linked to its website and is not responsible for the contents of any such linked site. The inclusion of any link does not imply endorsement by Spice Fusion of the site. Use of any such linked website is at the user's own risk.</p>
 
         <h2>7. Modifications</h2>
-        <p>Spice Fusion may revise these terms of service for its website at any time without notice. By using this website you are agreeing to be bound by the then current version of these Terms of Service.</p>
+        <p>Spice Fusion may revise these terms and conditions for its website at any time without notice. By using this website you are agreeing to be bound by the then current version of these Terms and Conditions.</p>
 
         <h2>8. Governing Law</h2>
         <p>These terms and conditions are governed by and construed in accordance with the laws of Singapore and you irrevocably submit to the exclusive jurisdiction of the courts in that location.</p>
 
         <h2>9. Contact Information</h2>
-        <p>If you have any questions about these Terms of Service, please contact us at:</p>
+        <p>If you have any questions about these Terms and Conditions, please contact us at:</p>
         <p>Email: hello@spicefusion.com<br>
         Phone: +65 6451 5115<br>
         Address: 180 Ang Mo Kio Avenue 8, Singapore 569830</p>

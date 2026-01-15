@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jan 06, 2026 at 12:29 PM
+-- Generation Time: Jan 13, 2026 at 03:22 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -47,9 +47,9 @@ CREATE TABLE `admin_user` (
 --
 
 INSERT INTO `admin_user` (`admin_id`, `username`, `email`, `password_hash`, `first_name`, `last_name`, `role`, `is_active`, `created_at`, `updated_at`, `reset_token`, `token_expiry`) VALUES
-(1, 'jason', 'jinsheng122@gmail.com', '$2y$10$lemN0FW3zBPYVhVoGSFE1e32KldP68stbCXlxGF/Spq1v1kdKGFhe', 'kee', 'jin sheng', 'Staff', 1, '2025-10-30 20:37:04', '2025-12-15 16:16:34', '464918', '2025-12-15 17:26:34'),
-(2, 'Shaun', 'shaun123@gmail.com', '$2y$10$XNd.3RaVEzaS12M39AMsue.2ISG.fTSchCVoSpXSf8nVL9.QZq6Gm', 'Chua Shen', 'Lin Shaun', 'Staff', 0, '2025-11-03 17:20:25', '2025-11-26 02:28:12', NULL, NULL),
-(3, 'SuperAdmin', 'zee271810@gmail.com', '$2y$10$UlkbY1NUlFlbZgOxO8E.3eCix1cl7nXBul7I1TTQWaODWwY4K8zva', 'Kee', 'Jin Sheng', 'Super Admin', 1, '2025-11-19 06:28:38', '2025-11-25 17:25:03', NULL, NULL);
+(1, 'jason', 'jinsheng122@gmail.com', '$2y$10$lemN0FW3zBPYVhVoGSFE1e32KldP68stbCXlxGF/Spq1v1kdKGFhe', 'kee', 'jin sheng', 'Staff', 1, '2025-10-30 20:37:04', '2026-01-12 19:32:09', '296969', '2026-01-12 20:42:09'),
+(2, 'Shaun', 'shaun123@gmail.com', '$2y$10$XNd.3RaVEzaS12M39AMsue.2ISG.fTSchCVoSpXSf8nVL9.QZq6Gm', 'Chua Shen', 'Lin Shaun', 'Staff', 1, '2025-11-03 17:20:25', '2026-01-13 09:24:39', NULL, NULL),
+(3, 'SuperAdmin', 'zee271810@gmail.com', '$2y$10$MQxGOjuPMCR944.6nE3VwO2IreJ9.XMvMEyOh59rWYTmJrrl7Ku6e', 'Kee', 'Jin Sheng', 'Super Admin', 1, '2025-11-19 06:28:38', '2026-01-13 09:14:43', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -178,7 +178,11 @@ INSERT INTO `order` (`order_id`, `user_id`, `address_id`, `order_number`, `order
 (14, 1, 1, 'SF202512284027', 'Delivered', 'Delivery', 33.80, 2.03, 5.00, 40.83, '', '2025-12-28 09:09:07', NULL, '2025-12-28 08:24:07', '2025-12-28 08:31:23'),
 (15, 1, 1, 'SF202512280994', 'Pending', 'Delivery', 32.70, 1.96, 5.00, 39.66, '', '2025-12-28 09:22:26', NULL, '2025-12-28 08:37:26', '2025-12-28 08:37:26'),
 (16, 2, 2, 'SF202512282296', 'Pending', 'Delivery', 39.00, 2.34, 5.00, 46.34, '', '2025-12-28 09:30:29', NULL, '2025-12-28 08:45:29', '2025-12-28 08:45:29'),
-(17, 1, 1, 'SF202601065308', 'Pending', 'Delivery', 8.90, 0.53, 5.00, 14.43, '', '2026-01-06 06:42:22', NULL, '2026-01-06 05:57:22', '2026-01-06 05:57:22');
+(17, 1, 1, 'SF202601065308', 'Delivered', 'Delivery', 8.90, 0.53, 5.00, 14.43, '', '2026-01-06 06:42:22', NULL, '2026-01-06 05:57:22', '2026-01-06 11:44:20'),
+(18, 1, 1, 'SF202601080595', 'Pending', 'Delivery', 73.10, 4.39, 5.00, 82.49, '', '2026-01-08 09:20:01', NULL, '2026-01-08 08:35:01', '2026-01-08 08:35:01'),
+(19, 1, 1, 'SF202601096459', 'Pending', 'Delivery', 45.30, 2.72, 5.00, 53.02, 'ok', '2026-01-09 05:12:31', NULL, '2026-01-09 04:27:31', '2026-01-09 04:27:31'),
+(20, 1, 1, 'SF202601094791', 'Pending', 'Delivery', 24.10, 1.45, 5.00, 30.55, '', '2026-01-09 06:06:55', NULL, '2026-01-09 05:21:55', '2026-01-09 05:21:55'),
+(21, 1, 1, 'SF202601128039', 'Pending', 'Delivery', 37.40, 2.24, 5.00, 44.64, '', '2026-01-12 20:14:45', NULL, '2026-01-12 19:29:45', '2026-01-12 19:29:45');
 
 -- --------------------------------------------------------
 
@@ -222,7 +226,20 @@ INSERT INTO `order_item` (`item_id`, `order_id`, `product_id`, `quantity`, `unit
 (19, 16, 18, 2, 7.60, 15.20, NULL, '2025-12-28 08:45:29'),
 (20, 16, 4, 1, 8.90, 8.90, NULL, '2025-12-28 08:45:29'),
 (21, 16, 14, 1, 14.90, 14.90, NULL, '2025-12-28 08:45:29'),
-(22, 17, 4, 1, 8.90, 8.90, NULL, '2026-01-06 05:57:22');
+(22, 17, 4, 1, 8.90, 8.90, NULL, '2026-01-06 05:57:22'),
+(23, 18, 9, 1, 7.90, 7.90, NULL, '2026-01-08 08:35:01'),
+(24, 18, 2, 1, 22.90, 22.90, NULL, '2026-01-08 08:35:01'),
+(25, 18, 6, 1, 10.90, 10.90, NULL, '2026-01-08 08:35:01'),
+(26, 18, 18, 1, 7.60, 7.60, NULL, '2026-01-08 08:35:01'),
+(27, 18, 4, 1, 8.90, 8.90, NULL, '2026-01-08 08:35:01'),
+(28, 18, 14, 1, 14.90, 14.90, NULL, '2026-01-08 08:35:01'),
+(29, 19, 9, 1, 7.90, 7.90, NULL, '2026-01-09 04:27:31'),
+(30, 19, 18, 1, 7.60, 7.60, NULL, '2026-01-09 04:27:31'),
+(31, 19, 14, 2, 14.90, 29.80, NULL, '2026-01-09 04:27:31'),
+(32, 20, 18, 2, 7.60, 15.20, NULL, '2026-01-09 05:21:55'),
+(33, 20, 4, 1, 8.90, 8.90, NULL, '2026-01-09 05:21:55'),
+(34, 21, 18, 1, 7.60, 7.60, NULL, '2026-01-12 19:29:45'),
+(35, 21, 14, 2, 14.90, 29.80, NULL, '2026-01-12 19:29:45');
 
 -- --------------------------------------------------------
 
@@ -252,7 +269,11 @@ INSERT INTO `payment` (`payment_id`, `order_id`, `payment_method`, `payment_stat
 (5, 5, 'Cash', 'Completed', 45.07, NULL, '2025-11-12 12:06:04'),
 (6, 15, 'Online Banking', 'Completed', 39.66, NULL, '2025-12-28 08:37:26'),
 (7, 16, 'Credit Card', 'Completed', 46.34, NULL, '2025-12-28 08:45:29'),
-(8, 17, 'Credit Card', 'Completed', 14.43, NULL, '2026-01-06 05:57:22');
+(8, 17, 'Credit Card', 'Completed', 14.43, NULL, '2026-01-06 05:57:22'),
+(9, 18, 'Credit Card', 'Completed', 82.49, NULL, '2026-01-08 08:35:01'),
+(10, 19, 'Online Banking', 'Completed', 53.02, NULL, '2026-01-09 04:27:31'),
+(11, 20, 'Credit Card', 'Completed', 30.55, NULL, '2026-01-09 05:21:55'),
+(12, 21, 'Online Banking', 'Completed', 44.64, NULL, '2026-01-12 19:29:45');
 
 -- --------------------------------------------------------
 
@@ -281,22 +302,22 @@ CREATE TABLE `product` (
 
 INSERT INTO `product` (`product_id`, `category_id`, `product_name`, `description`, `price`, `image`, `is_available`, `stock_quantity`, `preparation_time`, `is_featured`, `created_at`, `updated_at`) VALUES
 (1, 1, 'Rendang Beef', 'Tender beef cooked in rich coconut milk and spices', 25.90, 'rendang_beef.png', 1, 50, 15, 1, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
-(2, 1, 'Kung Pao Chicken', 'Spicy diced chicken with peanuts and vegetables', 22.90, 'kung_pau_chciken.png', 1, 44, 15, 1, '2025-10-28 06:04:20', '2025-12-28 08:24:07'),
+(2, 1, 'Kung Pao Chicken', 'Spicy diced chicken with peanuts and vegetables', 22.90, 'kung_pau_chciken.png', 1, 43, 15, 1, '2025-10-28 06:04:20', '2026-01-08 08:35:01'),
 (3, 1, 'Mapo Tofu', 'Spicy tofu with minced meat in Sichuan sauce', 18.90, 'mapo_toufu.png', 1, 38, 15, 0, '2025-10-28 06:04:20', '2025-11-12 12:06:04'),
-(4, 2, 'Char Siu Bao', 'Steamed BBQ pork buns', 8.90, 'char_siu_bao.png', 1, 23, 15, 1, '2025-10-28 06:04:20', '2026-01-06 05:57:22'),
+(4, 2, 'Char Siu Bao', 'Steamed BBQ pork buns', 8.90, 'char_siu_bao.png', 1, 21, 15, 1, '2025-10-28 06:04:20', '2026-01-09 05:21:55'),
 (5, 2, 'Siew Mai', 'Steamed pork and shrimp dumplings', 12.90, 'siew_mai.png', 1, 35, 15, 0, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
-(6, 2, 'Dumpling', 'Pan-fried dumplings with pork filling', 10.90, 'dumpling.png', 1, 20, 15, 0, '2025-10-28 06:04:20', '2025-12-28 08:24:07'),
+(6, 2, 'Dumpling', 'Pan-fried dumplings with pork filling', 10.90, 'dumpling.png', 1, 19, 15, 0, '2025-10-28 06:04:20', '2026-01-08 08:35:01'),
 (8, 3, 'Tea', 'Traditional Chinese tea', 5.90, 'tea.png', 1, 100, 15, 0, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
-(9, 3, 'Lime Juice', 'Refreshing lime juice', 7.90, 'lime_juice.png', 1, 80, 15, 0, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
+(9, 3, 'Lime Juice', 'Refreshing lime juice', 7.90, 'lime_juice.png', 1, 78, 15, 0, '2025-10-28 06:04:20', '2026-01-09 04:27:31'),
 (10, 4, 'Taiyaki', 'Fish-shaped waffle with sweet filling', 8.90, 'taiyaki.png', 1, 20, 15, 1, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
 (11, 4, 'Tang Yuan', 'Sweet glutinous rice balls', 9.90, 'tang_yuan.png', 1, 25, 15, 0, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
 (12, 5, 'Nasi Ayam Geprek', 'Crispy chicken with rice and sambal', 16.90, 'nasi_ayam_geprek.png', 1, 40, 15, 1, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
 (13, 5, 'Nasi Campur', 'Mixed rice with various side dishes', 18.90, 'nasi_campur.png', 1, 35, 15, 0, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
-(14, 6, 'Char Kuey Teow', 'Stir-fried flat rice noodles', 14.90, 'char_kuey_teow.png', 1, 93, 15, 1, '2025-10-28 06:04:20', '2025-12-28 08:45:29'),
+(14, 6, 'Char Kuey Teow', 'Stir-fried flat rice noodles', 14.90, 'char_kuey_teow.png', 1, 88, 15, 1, '2025-10-28 06:04:20', '2026-01-12 19:29:45'),
 (15, 6, 'Mie Goreng', 'Indonesian fried noodles', 13.90, 'mie_goreng.png', 1, 30, 15, 0, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
 (16, 7, 'Wantan Soup', 'Clear soup with wonton dumplings', 12.90, 'wantan_soup.png', 1, 25, 15, 0, '2025-10-28 06:04:20', '2025-10-28 06:04:20'),
 (17, 2, 'test', 'test', 0.00, 'food_690973d78f0799.82262871.jpeg', 1, 0, 15, 0, '2025-11-04 03:32:39', '2025-11-04 03:33:12'),
-(18, 3, 'Coffee', '', 7.60, 'food_6939af6a832ea0.16874181.png', 1, 97, 15, 0, '2025-12-10 17:35:38', '2025-12-28 08:45:29');
+(18, 3, 'Coffee', 'Freshly brewed. Bold taste. pure energy.', 7.60, 'food_6939af6a832ea0.16874181.png', 1, 92, 15, 0, '2025-12-10 17:35:38', '2026-01-12 19:29:45');
 
 -- --------------------------------------------------------
 
@@ -324,7 +345,9 @@ INSERT INTO `review` (`review_id`, `user_id`, `product_id`, `order_id`, `rating`
 (1, 1, 4, 2, 5, 'nice！', 1, 1, '2025-12-24 14:51:46'),
 (2, 1, 6, 8, 5, 'nice', 1, 1, '2025-12-24 15:30:59'),
 (3, 1, 4, 8, 5, 'nice', 1, 1, '2025-12-24 15:31:07'),
-(4, 1, 14, 8, 2, 'no to bad', 1, 1, '2025-12-24 15:31:19');
+(4, 1, 14, 8, 2, 'no to bad', 1, 1, '2025-12-24 15:31:19'),
+(5, 1, 18, 19, 1, 'too expensive', 1, 1, '2026-01-09 04:28:58'),
+(6, 1, 14, 19, 1, '', 1, 1, '2026-01-09 04:29:00');
 
 -- --------------------------------------------------------
 
@@ -372,12 +395,7 @@ INSERT INTO `shopping_cart` (`cart_id`, `user_id`, `product_id`, `quantity`, `sp
 (18, 2, 4, 1, NULL, '2025-12-28 13:04:24', '2025-12-28 13:04:24'),
 (19, 2, 14, 3, NULL, '2025-12-28 13:04:27', '2025-12-28 13:04:27'),
 (20, 2, 9, 1, NULL, '2025-12-28 13:04:29', '2025-12-28 13:04:29'),
-(21, 1, 14, 1, NULL, '2026-01-06 05:57:46', '2026-01-06 05:57:46'),
-(22, 1, 4, 1, NULL, '2026-01-06 05:57:47', '2026-01-06 05:57:47'),
-(23, 1, 18, 1, NULL, '2026-01-06 05:57:48', '2026-01-06 05:57:48'),
-(24, 1, 6, 1, NULL, '2026-01-06 05:57:50', '2026-01-06 05:57:50'),
-(25, 1, 2, 1, NULL, '2026-01-06 05:57:51', '2026-01-06 05:57:51'),
-(26, 1, 9, 1, NULL, '2026-01-06 05:57:53', '2026-01-06 05:57:53');
+(34, 1, 4, 1, NULL, '2026-01-13 06:09:01', '2026-01-13 06:09:01');
 
 -- --------------------------------------------------------
 
@@ -411,7 +429,7 @@ CREATE TABLE `user` (
 --
 
 INSERT INTO `user` (`user_id`, `username`, `email`, `password_hash`, `first_name`, `last_name`, `phone`, `date_of_birth`, `gender`, `profile_image`, `is_active`, `is_verified`, `security_question_id`, `security_answer_hash`, `created_at`, `updated_at`, `reset_token`, `token_expiry`) VALUES
-(1, 'herry', 'jinsheng122@gmail.com', '$2y$10$T8y70GVGmMMf6mAwXCbG/OPe9aRyr6Wq0B4UJOsanORYrHCxaBjhq', 'herry', 'potter', '0187826588', '2005-06-13', 'Male', 'user.jpg', 1, 0, 1, '$2y$10$h/vsHVGMbHfsfmunlt6jC.Zw1GZb23ZQJPPgrOB0zgUegPxlEPll2', '2025-10-30 20:39:35', '2025-11-17 17:00:08', NULL, NULL),
+(1, 'herry', 'jinsheng122@gmail.com', '$2y$10$fFOawS3ulpKKqiUuMBdXqOS7q8ptAq0TbaUtdqHS4jZMvozQ.iXoK', 'herry', 'potter', '0187826588', '2005-06-13', 'Male', 'avatar_696619eb78a85_1768298987.png', 1, 0, 1, '$2y$10$h/vsHVGMbHfsfmunlt6jC.Zw1GZb23ZQJPPgrOB0zgUegPxlEPll2', '2025-10-30 20:39:35', '2026-01-13 10:09:47', '126565', '2026-01-12 20:31:04'),
 (2, 'Kai Shun', 'Jkee1306@gmail.com', '$2y$10$ywBf5DpI2bcWa.0rq2tE7uq1DEdCG4AiCAklT4.xuGRv17iGOqr0y', 'Kevin', 'Kek', '0167099992', '2005-03-04', 'Male', 'user.jpg', 1, 0, NULL, NULL, '2025-11-12 11:54:36', '2025-12-28 08:43:15', NULL, NULL);
 
 --
@@ -548,19 +566,19 @@ ALTER TABLE `dummy_bank`
 -- AUTO_INCREMENT for table `order`
 --
 ALTER TABLE `order`
-  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
 
 --
 -- AUTO_INCREMENT for table `order_item`
 --
 ALTER TABLE `order_item`
-  MODIFY `item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
+  MODIFY `item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=36;
 
 --
 -- AUTO_INCREMENT for table `payment`
 --
 ALTER TABLE `payment`
-  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT for table `product`
@@ -572,7 +590,7 @@ ALTER TABLE `product`
 -- AUTO_INCREMENT for table `review`
 --
 ALTER TABLE `review`
-  MODIFY `review_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `review_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `security_questions`
@@ -584,7 +602,7 @@ ALTER TABLE `security_questions`
 -- AUTO_INCREMENT for table `shopping_cart`
 --
 ALTER TABLE `shopping_cart`
-  MODIFY `cart_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
+  MODIFY `cart_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
 
 --
 -- AUTO_INCREMENT for table `user`

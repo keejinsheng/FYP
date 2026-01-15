@@ -11,11 +11,11 @@
         </div>
         <div class="footer-section">
             <h3>Quick Links</h3>
-            <a href="/DWP/customer/main/menu/menu.php">Menu</a>
-            <a href="/DWP/customer/main/aboutus/aboutus.php">About Us</a>
-            <a href="/DWP/customer/main/contactus/contactus.php">Contact</a>
-            <a href="/DWP/customer/main/legal/terms.php">Terms of Service</a>
-            <a href="/DWP/customer/main/legal/privacy.php">Privacy Policy</a>
+            <a href="/FYP/customer/main/menu/menu.php">Menu</a>
+            <a href="/FYP/customer/main/aboutus/aboutus.php">About Us</a>
+            <a href="/FYP/customer/main/contactus/contactus.php">Contact Us</a>
+            <a href="/FYP/customer/main/legal/terms.php">Terms and Conditions</a>
+            <a href="/FYP/customer/main/legal/privacy.php">Privacy Policy</a>
         </div>
         <div class="footer-section">
             <h3>Contact Info</h3>
@@ -33,8 +33,8 @@
     </div>
     <div class="footer-bottom">
         <p>&copy; 2024 Spice Fusion. All rights reserved. | 
-            <a href="/DWP/customer/main/legal/terms.php">Terms</a> | 
-            <a href="/DWP/customer/main/legal/privacy.php">Privacy</a>
+            <a href="/FYP/customer/main/legal/terms.php">Terms and Conditions</a> | 
+            <a href="/FYP/customer/main/legal/privacy.php">Privacy Policy</a>
         </p>
     </div>
 </footer>
